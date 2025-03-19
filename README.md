@@ -1,3 +1,7 @@
+# Create env:
+```
+python -m venv env
+```
 # Installation:
 ```
 python.exe -m pip install --upgrade pip
