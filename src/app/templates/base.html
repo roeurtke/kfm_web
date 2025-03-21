@@ -74,7 +74,54 @@
         $(document).ready(function() {
             $('.collapse').collapse('hide');  // Initialize collapse elements
         });
+        document.addEventListener("DOMContentLoaded", function () {
+            const accessToken = localStorage.getItem("accessToken");
+
+            if (!accessToken) {
+                // Redirect to login page if user is not logged in
+                window.location.href = "http://127.0.0.1:9000/login/";
+            }
+        });
     </script>
+    <script>
+        async function logoutUser() {
+            const token = localStorage.getItem("accessToken");
+            const refreshToken = localStorage.getItem("refreshToken");
+    
+            if (!token || !refreshToken) {
+                console.error("No valid tokens found. Redirecting to login.");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                window.location.href = "/login/";
+                return;
+            }
+    
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/logout/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+    
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Logout failed with status: ${response.status}`);
+                }
+    
+                // Clear stored tokens and redirect to login
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                window.location.href = "/login/";
+    
+            } catch (error) {
+                console.error("Logout error:", error);
+                alert("Logout failed: " + error.message);
+            }
+        }
+    </script>    
 </body>
 
 </html>
