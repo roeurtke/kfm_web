@@ -58,7 +58,7 @@ CORS_ALLOW_METHODS = [
     "PUT",
     "PATCH",
     "DELETE",
-    "OPTIONS"  # Add this!
+    "OPTIONS"
 ]
 CORS_ALLOW_HEADERS = [
     "authorization",
