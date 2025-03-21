@@ -47,49 +47,42 @@
         </div>
     </div>
     <script>
-        document.getElementById("loginForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-            const response = await fetch("http://127.0.0.1:8000/api/login/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await response.json();
-            if (response.ok) {
-                localStorage.setItem("token", data.token);
-                window.location.href = "dashboard.html";
+        document.addEventListener("DOMContentLoaded", function () {
+            const loginForm = document.getElementById("loginForm"); // Corrected ID
+    
+            if (loginForm) {
+                loginForm.addEventListener("submit", async function (event) {
+                    event.preventDefault();
+    
+                    const username = document.getElementById("username").value;
+                    const password = document.getElementById("password").value;
+    
+                    try {
+                        const response = await fetch("http://127.0.0.1:8000/api/login/", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ username, password })
+                        });
+    
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+    
+                        const data = await response.json();
+                        console.log("Login successful!", data);
+                        localStorage.setItem("accessToken", data.access);  // Store token
+                        window.location.href = "http://127.0.0.1:9000/dashboard/";  // Redirect user
+                    } catch (error) {
+                        console.error("Login failed:", error);
+                        document.getElementById("loginMessage").innerText = "Invalid credentials or CORS error";
+                    }
+                });
             } else {
-                document.getElementById("loginMessage").innerText = "Login failed. Please check your credentials.";
+                console.error("Login form not found!");
             }
         });
-        // document.getElementById("loginForm").addEventListener("submit", async function(event) {
-        //     event.preventDefault();
-        //     console.log("Login button clicked!");  // Debug message
-
-        //     const username = document.getElementById("username").value;
-        //     const password = document.getElementById("password").value;
-
-        //     console.log("Username:", username, "Password:", password);  // Debug message
-
-        //     const response = await fetch("http://127.0.0.1:8000/api/login/", {
-        //         method: "POST",
-        //         headers: { "Content-Type": "application/json" },
-        //         body: JSON.stringify({ username, password })
-        //     });
-
-        //     const data = await response.json();
-        //     console.log("Response received:", data);  // Debug message
-
-        //     if (response.ok) {
-        //         localStorage.setItem("token", data.token);
-        //         window.location.href = "dashboard.html";
-        //     } else {
-        //         document.getElementById("loginMessage").innerText = "Login failed. Please check your credentials.";
-        //     }
-        // });
-
-    </script>
+    </script>    
 </body>
 </html>
