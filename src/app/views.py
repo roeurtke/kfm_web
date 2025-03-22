@@ -10,13 +10,13 @@ def register(request):
     return render(request, 'register.html')
 
 def income(request):
-    return render(request, 'list_income.html')
+    return render(request, 'incomes/list_income.html')
 
 def expense(request):
-    return render(request, 'list_expense.html')
+    return render(request, 'expanses/list_expense.html')
 
 def income_cetegory(request):
-    return render(request, 'list_income_category.html')
+    return render(request, 'income_cetegories/list_income_category.html')
 
 def expense_category(request):
-    return render(request, 'list_expense_category.html')
+    return render(request, 'expense_categories/list_expense_category.html')

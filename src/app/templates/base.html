@@ -71,9 +71,17 @@
         $(document).ready(function() {
             $('#dataTable').DataTable();
         });
+        
         $(document).ready(function() {
-            $('.collapse').collapse('hide');  // Initialize collapse elements
+            $('.collapse').each(function() {
+                if ($(this).find('.active').length > 0) {
+                    $(this).collapse('show');  // Keep it open if it has an active link
+                } else {
+                    $(this).collapse('hide');  // Otherwise, collapse it
+                }
+            });
         });
+        
         document.addEventListener("DOMContentLoaded", function () {
             const accessToken = localStorage.getItem("accessToken");
 
