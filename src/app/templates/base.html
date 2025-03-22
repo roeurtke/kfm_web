@@ -87,9 +87,33 @@
 
             if (!accessToken) {
                 // Redirect to login page if user is not logged in
-                window.location.href = "http://127.0.0.1:9000/login/";
+                window.location.href = "/login/";
             }
         });
+
+        {% comment %} async function checkBackend() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000); // Set a timeout of 3 seconds
+    
+                const response = await fetch("http://127.0.0.1:8000/api/health/", {
+                    signal: controller.signal
+                });
+    
+                clearTimeout(timeoutId); // Clear timeout if response is received
+    
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error("Backend is down:", error);
+                //alert("The system is currently unavailable. Redirecting to login.");
+                window.location.href = "/login/";
+            }
+        }
+    
+        document.addEventListener("DOMContentLoaded", checkBackend); {% endcomment %}
+
     </script>
     <script>
         async function logoutUser() {
