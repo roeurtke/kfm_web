@@ -33,7 +33,7 @@
             <i class="fas fa-fw fa-suitcase"></i>
             <span>Cash Flow</span>
         </a>
-        <div id="collapseCashFlow" class="collapse {% if 'incomes' in request.path or 'expanses' in request.path or 'income_categories' in request.path or 'expense_categories' in request.path %}show{% endif %}" aria-labelledby="headingCashFlow" data-parent="#accordionSidebar">
+        <div id="collapseCashFlow" class="collapse {% if show_collapse %}show{% endif %}" aria-labelledby="headingCashFlow" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item {% if 'incomes' in request.path %}active{% endif %}" href="{% url 'incomes' %}">Income</a>
                 <a class="collapse-item {% if 'expanses' in request.path %}active{% endif %}" href="{% url 'expanses' %}">Expense</a>
