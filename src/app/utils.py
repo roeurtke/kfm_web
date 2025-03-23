@@ -8,6 +8,5 @@ def should_show_collapse(request):
         'users',
         'roles',
         'permissions',
-        'projects',
     ]
     return any(key in request.path for key in paths_to_check)

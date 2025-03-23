@@ -58,9 +58,3 @@ def permission(request):
         'show_collapse_setting': should_show_collapse(request),
     }
     return render(request, 'permissions/list_permission.html', context)
-
-def project(request):
-    context = {
-        'show_collapse_setting': should_show_collapse(request),
-    }
-    return render(request, 'projects/list_project.html', context)

@@ -18,5 +18,4 @@ urlpatterns = [
     path('users/', views.user, name='users'),
     path('roles/', views.role, name='roles'),
     path('permissions/', views.permission, name='permissions'),
-    path('projects/', views.project, name='projects'),
 ]
