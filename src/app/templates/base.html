@@ -68,10 +68,12 @@
 
     <!-- Page level custom scripts -->
     <script>
+        // Call the dataTables jQuery plugin
         $(document).ready(function() {
             $('#dataTable').DataTable();
         });
         
+        // Collapse all elements with the 'collapse' class
         $(document).ready(function() {
             $('.collapse').each(function() {
                 if ($(this).find('.active').length > 0) {
@@ -82,6 +84,7 @@
             });
         });
         
+        // Check if the user is logged in
         document.addEventListener("DOMContentLoaded", function () {
             const accessToken = localStorage.getItem("accessToken");
 
@@ -91,28 +94,51 @@
             }
         });
 
-        {% comment %} async function checkBackend() {
+        // Check if the backend is healthy
+        async function checkBackend() {
+            const backendUrl = "https://jsonplaceholder.typicode.com/posts/1";
+            const timeoutDuration = 3000; // 3 seconds
+        
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000); // Set a timeout of 3 seconds
-    
-                const response = await fetch("http://127.0.0.1:8000/api/health/", {
-                    signal: controller.signal
+                const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+        
+                console.log("Sending request to backend...");
+                const response = await fetch(backendUrl, {
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 });
-    
+        
                 clearTimeout(timeoutId); // Clear timeout if response is received
-    
+        
+                console.log("Response status:", response.status, response.statusText);
+                console.log("Response headers:", [...response.headers.entries()]);
+        
                 if (!response.ok) {
-                    throw new Error(`Backend error: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error("Backend returned non-OK status:", response.status, response.statusText);
+                    console.error("Response body:", errorText);
+                    throw new Error(`Backend error: ${response.status} ${response.statusText}`);
                 }
+        
+                const data = await response.json();
+                console.log("Backend is healthy:", data);
+        
             } catch (error) {
-                console.error("Backend is down:", error);
-                //alert("The system is currently unavailable. Redirecting to login.");
-                window.location.href = "/login/";
+                console.error("Backend is down:", error.message);
+        
+                // Only redirect to login if the user is not already on the login page
+                if (window.location.pathname !== "/login/") {
+                    console.log("Redirecting to login page...");
+                    window.location.href = "/login/";
+                }
             }
         }
-    
-        document.addEventListener("DOMContentLoaded", checkBackend); {% endcomment %}
+        
+        // Run the checkBackend function when the DOM is fully loaded
+        document.addEventListener("DOMContentLoaded", checkBackend);
 
     </script>
     <script>
