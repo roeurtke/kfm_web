@@ -8,15 +8,14 @@
     {% load static %}
     <!-- Fonts -->
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
-    <!-- <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet"> -->
-     <link rel="stylesheet" href="{% static '/css/css.css' %}">
+    <link rel="stylesheet" href="{% static '/css/css.css' %}">
     
     <!-- Core Styles -->
     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
     
     <!-- DataTables Styles -->
     <link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
-    <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css" rel="stylesheet">
+    <link href="{% static 'vendor/datatables/buttons.bootstrap4.min.css' %}" rel="stylesheet">
 
     <!-- Custom styles for this page -->
     <link href="{% static 'css/custom.css' %}" rel="stylesheet">
@@ -59,45 +58,62 @@
         <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- Core Scripts -->
+    <!-- jQuery (load only once!) -->
     <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+
+    <!-- Bootstrap and other vendors -->
     <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
     <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
 
-    <!-- DataTables Scripts -->
+    <!-- DataTables Core -->
     <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
-    <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
-    <script src="{% static 'vendor/datatables/buttons.bootstrap4.min.js' %}"></script>
+
+    <!-- Export Dependencies -->
     <script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
     <script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
     <script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+
+    <!-- Buttons Extension -->
+    <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/buttons.bootstrap4.min.js' %}"></script>
     <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
 
     <!-- Page level custom scripts -->
     <script>
         // Call the dataTables jQuery plugin
-        $(document).ready(function () {
+        $(document).ready(function() {
             $('#dataTable').DataTable({
-                dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'Bf>>" +
-                     "<'row'<'col-sm-12'tr>>" +
-                     "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                dom: `
+                    <'top d-flex justify-content-between align-items-center'<'d-flex'<'mr-3'l><'dt-buttons'B>><'ml-auto'f>>
+                    <'row'<'col-sm-12'tr>>
+                    <'row'<'col-sm-12 col-md-4'i><'col-sm-12 col-md-8'p>>
+                `,
                 buttons: [
-                    {
-                        extend: 'excelHtml5',
-                        className: 'btn-export btn-success',
-                        text: '<i class="fas fa-file-excel mr-2"></i>Excel'
+                    { 
+                        extend: 'csvHtml5', 
+                        className: 'btn-sm', 
+                        text: 'CSV  &nbsp;&nbsp;|',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
                     },
-                    {
-                        extend: 'pdfHtml5',
-                        className: 'btn-export btn-danger',
-                        text: '<i class="fas fa-file-pdf mr-2"></i>PDF'
+                    { 
+                        extend: 'excelHtml5', 
+                        className: 'btn-sm', 
+                        text: 'EXCEL  &nbsp;&nbsp;|',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
                     },
-                    {
-                        extend: 'csvHtml5',
-                        className: 'btn-export btn-info',
-                        text: '<i class="fas fa-file-csv mr-2"></i>CSV'
+                    { 
+                        extend: 'pdfHtml5', 
+                        className: 'btn-sm', 
+                        text: 'PDF',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
                     }
                 ],
                 language: {
@@ -108,12 +124,10 @@
                         next: '<i class="fas fa-chevron-right"></i>'
                     }
                 },
-                responsive: true,
-                order: [[0, 'desc']],
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]]
+                responsive: true
             });
-        });   
+        });
+        
     </script>
     <script> 
         // Collapse all elements with the 'collapse' class

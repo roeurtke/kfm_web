@@ -1,47 +1,100 @@
-.dataTables_wrapper .dataTables_filter input {
-    border-radius: 20px;
-    padding: 5px 15px;
-    border: 1px solid #d1d3e2;
+/* Container for top elements */
+.dataTables_wrapper .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 0rem;
 }
 
-.table-hover tbody tr:hover {
-    background-color: #f6f9ff;
+/* Adjustments for length menu and buttons */
+.dataTables_wrapper .dataTables_length {
+    margin-right: 10px;
 }
 
-.btn-export {
-    border-radius: 25px;
-    padding: 8px 20px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-export:hover {
-    transform: scale(1.05);
-}
-
-.action-buttons .btn {
-    width: 35px;
-    height: 35px;
-    padding: 0;
-    display: inline-flex;
+/* Styling for buttons */
+.dataTables_wrapper .dt-buttons .btn-export {
+    padding: 4px 10px; /* Reduce padding */
+    font-size: 0.75rem; /* Decrease font size */
+    height: 32px; /* Set a fixed height */
+    line-height: 1;
+    display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    margin: 0 3px;
 }
 
-.status-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 8px;
+/* Ensure buttons have a small margin between them */
+.dataTables_wrapper .dt-buttons .btn-export:not(:last-child) {
+    margin-right: 5px;
 }
 
-.online {
-    background-color: #28a745;
+/* Reduce icon size */
+.dataTables_wrapper .dt-buttons .btn-export i {
+    font-size: 0.85rem;
+    margin-right: 4px;
 }
 
-.offline {
-    background-color: #dc3545;
+/* Search bar styling */
+.dataTables_wrapper .dataTables_filter input {
+    width: 200px;
+    border-radius: 5px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+}
+
+/* Table header */
+table.dataTable thead {
+    background-color: #464a52;
+    color: white;
+}
+
+/* Sorting arrows styling */
+table.dataTable thead th {
+    position: relative;
+    padding-right: 15px;
+}
+
+/* Pagination buttons */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+/* Current page indicator */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+}
+
+.dt-buttons .btn-sm span
+{
+    font-weight: bold;
+    color: #475f7b;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-family: 'Rubik', 'Khmer OS Battambang';
+}
+
+.dt-buttons .btn-secondary
+{
+    background-color: white;
+    /* font-size: 0.8rem; */
+    text-transform: uppercase;
+    font-family: 'Rubik', 'Khmer OS Battambang';
+    border: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dataTables_wrapper .dt-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .dataTables_wrapper .dt-buttons .btn-export {
+        flex: 1; /* Make buttons fit in a row */
+        min-width: 80px; /* Prevent too small buttons */
+    }
 }
