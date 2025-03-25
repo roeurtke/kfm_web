@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     {% load static %}
-    <!-- Custom fonts for this template-->
-    <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
-    <!-- Custom styles for this template-->
+    <!-- Fonts -->
+    <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet">
+    <!-- <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet"> -->
+     <link rel="stylesheet" href="{% static '/css/css.css' %}">
+    
+    <!-- Core Styles -->
     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
-    <!-- DataTables CSS -->
+    
+    <!-- DataTables Styles -->
     <link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+    <link href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.bootstrap4.min.css" rel="stylesheet">
 
+    <!-- Custom styles for this page -->
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet">
 </head>
 
 <body id="page-top">
@@ -53,27 +59,63 @@
         <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- Bootstrap core JavaScript-->
+    <!-- Core Scripts -->
     <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-
-    <!-- Core plugin JavaScript-->
     <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
-
-    <!-- Custom scripts for all pages-->
     <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
 
-    <!-- DataTables JavaScript -->
+    <!-- DataTables Scripts -->
     <script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/buttons.bootstrap4.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+    <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
 
     <!-- Page level custom scripts -->
     <script>
         // Call the dataTables jQuery plugin
-        $(document).ready(function() {
-            $('#dataTable').DataTable();
-        });
-        
+        $(document).ready(function () {
+            $('#dataTable').DataTable({
+                dom: "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'Bf>>" +
+                     "<'row'<'col-sm-12'tr>>" +
+                     "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        className: 'btn-export btn-success',
+                        text: '<i class="fas fa-file-excel mr-2"></i>Excel'
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        className: 'btn-export btn-danger',
+                        text: '<i class="fas fa-file-pdf mr-2"></i>PDF'
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        className: 'btn-export btn-info',
+                        text: '<i class="fas fa-file-csv mr-2"></i>CSV'
+                    }
+                ],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search records...",
+                    paginate: {
+                        previous: '<i class="fas fa-chevron-left"></i>',
+                        next: '<i class="fas fa-chevron-right"></i>'
+                    }
+                },
+                responsive: true,
+                order: [[0, 'desc']],
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]]
+            });
+        });   
+    </script>
+    <script> 
         // Collapse all elements with the 'collapse' class
         $(document).ready(function() {
             $('.collapse').each(function() {
@@ -84,7 +126,8 @@
                 }
             });
         });
-        
+    </script>
+    <script>    
         // Check if the user is logged in
         document.addEventListener("DOMContentLoaded", function () {
             const accessToken = localStorage.getItem("accessToken");
@@ -94,7 +137,8 @@
                 window.location.href = "/login/";
             }
         });
-
+    </script>
+    <script>
         // Check if the backend is healthy
         async function checkBackend() {
             const backendUrl = "https://jsonplaceholder.typicode.com/posts/1";
@@ -140,7 +184,6 @@
         
         // Run the checkBackend function when the DOM is fully loaded
         document.addEventListener("DOMContentLoaded", checkBackend);
-
     </script>
     <script>
         async function logoutUser() {
