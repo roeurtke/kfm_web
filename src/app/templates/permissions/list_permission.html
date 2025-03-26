@@ -41,7 +41,7 @@
             }
     
             try {
-                let response = await fetch("http://127.0.0.1:8000/api/roles/", {
+                let response = await fetch("http://127.0.0.1:8000/api/permissions/", {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -49,14 +49,12 @@
                     }
                 });
     
-                if (response.status === 401 && retry) {
-                    console.warn("Access token expired. Refreshing token...");
-                    const newAccessToken = await refreshAccessToken();
-                    if (newAccessToken) {
-                        return fetchPermissions(false); // Retry the request once with new token
+                if (response.status === 401) {
+                    accessToken = await refreshAccessToken(); // Try refreshing token
+                    if (accessToken) {
+                        return fetchUsers(); // Retry only once after getting new token
                     } else {
-                        console.error("Failed to refresh token.");
-                        return;
+                        throw new Error("Session expired - please login again");
                     }
                 }
     
