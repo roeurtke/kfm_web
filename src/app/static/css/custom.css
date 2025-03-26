@@ -48,13 +48,20 @@
 /* Table header */
 table.dataTable thead {
     background-color: #464a52;
-    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
 }
 
 /* Sorting arrows styling */
 table.dataTable thead th {
     position: relative;
     padding-right: 15px;
+}
+
+table.dataTable tbody th, table.dataTable tbody td {
+    padding: 8px 12px;
+    text-transform: lowercase;
 }
 
 /* Pagination buttons */
