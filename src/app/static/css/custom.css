@@ -10,6 +10,9 @@
 /* Adjustments for length menu and buttons */
 .dataTables_wrapper .dataTables_length {
     margin-right: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 12px;
 }
 
 /* Styling for buttons */
