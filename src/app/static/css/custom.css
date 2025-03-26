@@ -56,8 +56,16 @@ table.dataTable thead th {
 
 /* Pagination buttons */
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 5px 10px;
-    border-radius: 3px;
+    padding: 5px 0px;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Current page indicator */
