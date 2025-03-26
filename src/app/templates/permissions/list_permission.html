@@ -17,17 +17,115 @@
                 <thead class="thead-dark">
                     <tr>
                         <th>Name</th>
+                        <th>Codename</th>
                         <th>Description</th>
-                        <th>Status</th>
+                        <th>Create Date</th>
+                        <th>Update Date</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="permissionTableBody">
                     <!-- Loop through the incomes and display them in the table -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        async function fetchPermissions(retry = true) {
+            let accessToken = localStorage.getItem("accessToken");
+            if (!accessToken) {
+                console.error("No access token found.");
+                return;
+            }
+    
+            try {
+                let response = await fetch("http://127.0.0.1:8000/api/roles/", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+    
+                if (response.status === 401 && retry) {
+                    console.warn("Access token expired. Refreshing token...");
+                    const newAccessToken = await refreshAccessToken();
+                    if (newAccessToken) {
+                        return fetchPermissions(false); // Retry the request once with new token
+                    } else {
+                        console.error("Failed to refresh token.");
+                        return;
+                    }
+                }
+    
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+    
+                const data = await response.json();
+                console.log("API Response:", data);
+    
+                const permissions = data.permissions || data.results || data;
+                if (!Array.isArray(permissions)) {
+                    throw new Error(`Expected array but got ${typeof permissions}`);
+                }
+    
+                const tableBody = document.getElementById("permissionTableBody");
+                tableBody.innerHTML = permissions.map(permission => `
+                    <tr>
+                        <td>${permission.name || 'N/A'}</td>
+                        <td>${permission.codename || 'N/A'}</td>
+                        <td>${permission.description || 'N/A'}</td>
+                        <td>${permission.created_at || 'N/A'}</td>
+                        <td>${permission.updated_at || 'N/A'}</td>
+                        <td>
+                            <a href="/permissions/${permission.id}/">View</a>
+                            <a href="/permissions/${permission.id}/edit/">Edit</a>
+                            <a href="/permissions/${permission.id}/delete/" onclick="return confirm('Are you sure?')">Delete</a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error("Error fetching permissions:", error);
+                alert(`Failed to load permissions: ${error.message}`);
+            }
+        }
+    
+        async function refreshAccessToken() {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (!refreshToken) {
+                console.error("No refresh token available.");
+                return null;
+            }
+    
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refresh: refreshToken })
+                });
+    
+                if (!response.ok) {
+                    throw new Error("Failed to refresh token");
+                }
+    
+                const data = await response.json();
+                if (data.access) {
+                    localStorage.setItem("accessToken", data.access);
+                    console.log("Token refreshed successfully.");
+                    return data.access;
+                } else {
+                    throw new Error("No access token received");
+                }
+            } catch (error) {
+                console.error("Token refresh failed:", error);
+                return null;
+            }
+        }
+    
+        fetchPermissions();
+    });
+</script>
 {% endblock %}

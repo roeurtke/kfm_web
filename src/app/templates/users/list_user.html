@@ -34,42 +34,44 @@
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        function fetchUsers() {
-            const access_token = localStorage.getItem("accessToken");
-            if (!access_token) {
+        async function fetchUsers() {
+            let accessToken = localStorage.getItem("accessToken");
+            if (!accessToken) {
                 alert("Please login first");
                 window.location.href = "/login/";
                 return;
             }
-    
-            fetch("http://127.0.0.1:8000/api/users/", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${access_token}`
-                }
-            })
-            .then(response => {
+
+            try {
+                let response = await fetch("http://127.0.0.1:8000/api/users/", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
+
                 if (response.status === 401) {
-                    return refreshAccessToken().then(newToken => {
-                        if (newToken) {
-                            return fetchUsers(); // Retry fetching users with new token
-                        } else {
-                            throw new Error("Session expired - please login again");
-                        }
-                    });
+                    accessToken = await refreshAccessToken(); // Try refreshing token
+                    if (accessToken) {
+                        return fetchUsers(); // Retry only once after getting new token
+                    } else {
+                        throw new Error("Session expired - please login again");
+                    }
                 }
+
                 if (!response.ok) {
                     throw new Error(`Server returned ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
+
+                const data = await response.json();
                 console.log("API Response:", data);
+
                 const users = data.users || data.results || data;
                 if (!Array.isArray(users)) {
                     throw new Error(`Expected array but got ${typeof users}`);
                 }
+
                 const tableBody = document.getElementById("userTableBody");
                 tableBody.innerHTML = users.map(user => `
                     <tr>
@@ -86,55 +88,48 @@
                         </td>
                     </tr>
                 `).join('');
-            })
-            .catch(error => {
-                console.error("Full error:", error);
+            } catch (error) {
+                console.error("Error fetching users:", error);
                 alert(`Failed to load users: ${error.message}`);
                 if (error.message.includes("expired") || !localStorage.getItem("accessToken")) {
                     window.location.href = "/login/";
                 }
-            });
+            }
         }
-    
-        function refreshAccessToken() {
+
+        async function refreshAccessToken() {
             const refreshToken = localStorage.getItem("refreshToken");
             if (!refreshToken) {
                 window.location.href = "/login/";
-                return Promise.resolve(null);
+                return null;
             }
-    
-            return fetch("http://127.0.0.1:8000/api/token/refresh/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ refresh: refreshToken })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to refresh token");
-                }
-                return response.json();
-            })
-            .then(data => {
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refresh: refreshToken })
+                });
+
+                if (!response.ok) throw new Error("Failed to refresh token");
+
+                const data = await response.json();
                 if (data.access) {
                     localStorage.setItem("accessToken", data.access);
                     return data.access;
                 } else {
                     throw new Error("No access token received");
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error("Token refresh failed:", error);
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("refreshToken");
                 window.location.href = "/login/";
                 return null;
-            });
+            }
         }
-    
+
         fetchUsers();
     });
-    
 </script>
 {% endblock %}
