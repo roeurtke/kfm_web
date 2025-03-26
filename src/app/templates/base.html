@@ -200,6 +200,7 @@
         document.addEventListener("DOMContentLoaded", checkBackend);
     </script>
     <script>
+        // Logout the user
         async function logoutUser() {
             const token = localStorage.getItem("accessToken");
             const refreshToken = localStorage.getItem("refreshToken");
