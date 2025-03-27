@@ -27,7 +27,7 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="userTableBody">
+                <tbody>
                     <!-- Loop through the incomes and display them in the table -->
                 </tbody>
             </table>
@@ -35,105 +35,187 @@
     </div>
 </div>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        async function fetchUsers() {
-            let accessToken = localStorage.getItem("accessToken");
-            if (!accessToken) {
-                alert("Please login first");
-                window.location.href = "/login/";
-                return;
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const users = await fetchUsers();
+            if (users && users.length > 0) {
+                renderUserTable(users);
+            } else {
+                console.warn("No users found or failed to fetch.");
             }
-
-            try {
-                let response = await fetch("http://127.0.0.1:8000/api/users/", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${accessToken}`
-                    }
-                });
-
-                if (response.status === 401) {
-                    accessToken = await refreshAccessToken(); // Try refreshing token
-                    if (accessToken) {
-                        return fetchUsers(); // Retry only once after getting new token
-                    } else {
-                        throw new Error("Session expired - please login again");
-                    }
-                }
-
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log("API Response:", data);
-
-                const users = data.users || data.results || data;
-                if (!Array.isArray(users)) {
-                    throw new Error(`Expected array but got ${typeof users}`);
-                }
-
-                const tableBody = document.getElementById("userTableBody");
-                tableBody.innerHTML = users.map(user => `
-                    <tr>
-                        <td>${user.username || 'N/A'}</td>
-                        <td>${user.email || 'N/A'}</td>
-                        <td>${user.first_name || 'N/A'}</td>
-                        <td>${user.last_name || 'N/A'}</td>
-                        <td>${user.spending_limit || 'N/A'}</td>
-                        <td>${user.role?.name || user.role || 'N/A'}</td>
-                        <td>${user.created_at || 'N/A'}</td>
-                        <td>${user.updated_at || 'N/A'}</td>
-                        <td>
-                            <a href="/users/${user.id}/">View</a>
-                            <a href="/users/${user.id}/edit/">Edit</a>
-                            <a href="/users/${user.id}/delete/" onclick="return confirm('Are you sure?')">Delete</a>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error("Error fetching users:", error);
-                alert(`Failed to load users: ${error.message}`);
-                if (error.message.includes("expired") || !localStorage.getItem("accessToken")) {
-                    window.location.href = "/login/";
-                }
-            }
+        } catch (error) {
+            console.error("Initialization error:", error);
         }
-
-        async function refreshAccessToken() {
-            const refreshToken = localStorage.getItem("refreshToken");
-            if (!refreshToken) {
-                window.location.href = "/login/";
-                return null;
-            }
-
-            try {
-                const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ refresh: refreshToken })
-                });
-
-                if (!response.ok) throw new Error("Failed to refresh token");
-
-                const data = await response.json();
-                if (data.access) {
-                    localStorage.setItem("accessToken", data.access);
-                    return data.access;
-                } else {
-                    throw new Error("No access token received");
-                }
-            } catch (error) {
-                console.error("Token refresh failed:", error);
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
-                window.location.href = "/login/";
-                return null;
-            }
-        }
-
-        fetchUsers();
     });
+
+    // ================== Core Functions ==================
+    async function fetchUsers(retryAttempt = 0) {
+        const MAX_RETRIES = 1; // Prevent infinite loops
+        let accessToken = localStorage.getItem("accessToken");
+
+        // No token at all? Force login
+        if (!accessToken) {
+            redirectToLogin("Please login first");
+            return null;
+        }
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/api/users/", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            });
+
+            // Silent token refresh on 401
+            if (response.status === 401 && retryAttempt < MAX_RETRIES) {
+                const newToken = await refreshAccessToken(true); // Silent mode
+                if (newToken) {
+                    return fetchUsers(retryAttempt + 1); // Retry with new token
+                }
+                // If refresh fails, continue to throw error
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.users || data.results || data;
+        } catch (error) {
+            handleFetchError(error);
+            return null;
+        }
+    }
+
+    function renderUserTable(users) {
+        const tableBody = document.querySelector("#dataTable tbody");
+        if (!tableBody) return;
+
+        // Clear existing rows (if any)
+        tableBody.innerHTML = '';
+
+        // Create rows for each user
+        users.forEach(user => {
+            const row = document.createElement("tr");
+
+            // Helper to safely insert cell data
+            const addCell = (value) => {
+                const td = document.createElement("td");
+                td.textContent = value || 'N/A';
+                return td;
+            };
+
+            // Add cells in order of your table headers
+            row.appendChild(addCell(user.username));
+            row.appendChild(addCell(user.email));
+            row.appendChild(addCell(user.first_name));
+            row.appendChild(addCell(user.last_name));
+            row.appendChild(addCell(user.spending_limit));
+            row.appendChild(addCell(user.role?.name || user.role));
+            
+            // Format dates (optional)
+            row.appendChild(addCell(formatDate(user.created_at)));
+            row.appendChild(addCell(formatDate(user.updated_at)));
+
+            // Action buttons
+            const actionCell = document.createElement("td");
+            actionCell.appendChild(createActionLink(`/users/${user.id}/`, "View", "btn-info"));
+            actionCell.appendChild(createActionLink(`/users/${user.id}/edit/`, "Edit", "btn-warning"));
+            actionCell.appendChild(createActionLink(`/users/${user.id}/delete/`, "Delete", "btn-danger", true));
+            
+            row.appendChild(actionCell);
+            tableBody.appendChild(row);
+        });
+
+        // Initialize DataTable (if using jQuery DataTables)
+        initializeDataTable();
+    }
+
+    // ================== Helper Functions ==================
+    function createActionLink(href, text, className, isDelete = false) {
+        const link = document.createElement("a");
+        link.href = href;
+        link.textContent = text;
+        link.className = `btn btn-sm ${className} mx-1`;
+
+        if (isDelete) {
+            link.onclick = (e) => {
+                if (!confirm("Are you sure you want to delete this user?")) {
+                    e.preventDefault();
+                }
+            };
+        }
+        return link;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleString();
+    }
+
+    async function refreshAccessToken(silent = false) {
+        const refreshToken = localStorage.getItem("refreshToken");
+        if (!refreshToken) {
+            if (!silent) redirectToLogin("Session expired");
+            return null;
+        }
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ refresh: refreshToken })
+            });
+
+            // Refresh token itself expired? Force login
+            if (response.status === 401) {
+                if (!silent) redirectToLogin("Session expired");
+                return null;
+            }
+
+            if (!response.ok) throw new Error(`Refresh failed (HTTP ${response.status})`);
+
+            const { access } = await response.json();
+            if (!access) throw new Error("No access token received");
+
+            localStorage.setItem("accessToken", access);
+            return access;
+
+        } catch (error) {
+            console.error("Refresh failed:", error);
+            if (!silent) {
+                clearAuthData();
+                redirectToLogin("Session expired");
+            }
+            return null;
+        }
+    }
+
+    function redirectToLogin(message) {
+        if (message) {
+            alert(message); // Or use a toast/notification library for better UX
+        }
+        // Clear any residual auth data
+        clearAuthData();
+        // Redirect to login (replace with your actual login path)
+        window.location.href = "/login/";
+    }
+    function handleFetchError(error) {
+        console.error("API Request Failed:", error);
+
+        // Handle specific error cases
+        if (error.message.includes("expired") || error.message.includes("401")) {
+            redirectToLogin("Session expired - please login again");
+        } 
+        else if (error.message.includes("403")) {
+            redirectToLogin("Permission denied");
+        }
+        else {
+            // Generic error display (avoid showing raw errors to users)
+            alert("Operation failed. Please try again or contact support.");
+        }
+    }
 </script>
 {% endblock %}

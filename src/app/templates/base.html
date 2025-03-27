@@ -83,7 +83,7 @@
     <!-- Page level custom scripts -->
     <script>
         // Call the dataTables jQuery plugin
-        $(document).ready(function() {
+        async function initializeDataTable() {
             $('#dataTable').DataTable({
                 dom: `
                     <'top d-flex justify-content-between align-items-center'<'d-flex'<'mr-3'l><'dt-buttons'B>><'ml-auto'f>>
@@ -126,8 +126,7 @@
                 },
                 responsive: true
             });
-        });
-        
+        }
     </script>
     <script> 
         // Collapse all elements with the 'collapse' class
