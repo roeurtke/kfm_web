@@ -23,7 +23,7 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="roleTableBody">
+                <tbody>
                     <!-- Loop through the incomes and display them in the table -->
                 </tbody>
             </table>
@@ -31,7 +31,7 @@
     </div>
 </div>
 <script>
-    document.addEventListener("DOMContentLoaded", initUserTable);
+    document.addEventListener("DOMContentLoaded", initRoleTable);
 
     // Configuration
     const config = {
@@ -40,7 +40,7 @@
     };
 
     // Main initialization
-    async function initUserTable() {
+    async function initRoleTable() {
         try {
             const roles = await fetchRolesWithSilentRefresh();
             renderRoleTable(roles || []);
