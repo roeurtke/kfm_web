@@ -43,15 +43,17 @@
                 renderUserTable(users);
             } else {
                 console.warn("No users found or failed to fetch.");
+                renderUserTable([]); // Render an empty table
             }
         } catch (error) {
             console.error("Initialization error:", error);
+            renderUserTable([]); // Render an empty table
         }
     });
 
     // Configuration
-    const API_BASE_URL = 'http://127.0.0.1:8000/api';
-    const MAX_TOKEN_REFRESH_ATTEMPTS = 1;
+    const apiBaseUrl = 'http://127.0.0.1:8000/api';
+    const maxTokenRefreshAttempts = 1;
 
     // Main function to fetch users with silent refresh
     async function fetchUsersWithSilentRefresh(retryCount = 0) {
@@ -59,7 +61,7 @@
         let accessToken = localStorage.getItem('accessToken');
         
         try {
-            const response = await fetch(`${API_BASE_URL}/users/`, {
+            const response = await fetch(`${apiBaseUrl}/users/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -68,7 +70,7 @@
             });
 
             // If unauthorized and we haven't maxed out retries
-            if (response.status === 401 && retryCount < MAX_TOKEN_REFRESH_ATTEMPTS) {
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
                 const newToken = await silentlyRefreshToken();
                 if (newToken) {
                     // Retry the request with new token
@@ -166,7 +168,7 @@
         if (!refreshToken) return null;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
+            const response = await fetch(`${apiBaseUrl}/token/refresh/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh: refreshToken })
