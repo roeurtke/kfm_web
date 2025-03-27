@@ -35,9 +35,10 @@
     </div>
 </div>
 <script>
+    // Check if valid user data was received...
     document.addEventListener("DOMContentLoaded", async () => {
         try {
-            const users = await fetchUsers();
+            const users = await fetchUsersWithSilentRefresh();
             if (users && users.length > 0) {
                 renderUserTable(users);
             } else {
@@ -48,43 +49,47 @@
         }
     });
 
-    // ================== Core Functions ==================
-    async function fetchUsers(retryAttempt = 0) {
-        const MAX_RETRIES = 1; // Prevent infinite loops
-        let accessToken = localStorage.getItem("accessToken");
+    // Configuration
+    const API_BASE_URL = 'http://127.0.0.1:8000/api';
+    const MAX_TOKEN_REFRESH_ATTEMPTS = 1;
 
-        // No token at all? Force login
-        if (!accessToken) {
-            redirectToLogin("Please login first");
-            return null;
-        }
-
+    // Main function to fetch users with silent refresh
+    async function fetchUsersWithSilentRefresh(retryCount = 0) {
+        // Get current token
+        let accessToken = localStorage.getItem('accessToken');
+        
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/users/", {
-                method: "GET",
+            const response = await fetch(`${API_BASE_URL}/users/`, {
+                method: 'GET',
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
 
-            // Silent token refresh on 401
-            if (response.status === 401 && retryAttempt < MAX_RETRIES) {
-                const newToken = await refreshAccessToken(true); // Silent mode
+            // If unauthorized and we haven't maxed out retries
+            if (response.status === 401 && retryCount < MAX_TOKEN_REFRESH_ATTEMPTS) {
+                const newToken = await silentlyRefreshToken();
                 if (newToken) {
-                    return fetchUsers(retryAttempt + 1); // Retry with new token
+                    // Retry the request with new token
+                    return fetchUsersWithSilentRefresh(retryCount + 1);
                 }
-                // If refresh fails, continue to throw error
+            }
+
+            // If still unauthorized after refresh attempts
+            if (response.status === 401) {
+                await handleSilentAuthFailure();
+                return null;
             }
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(`Request failed with status ${response.status}`);
             }
 
-            const data = await response.json();
-            return data.users || data.results || data;
+            return await response.json();
+
         } catch (error) {
-            handleFetchError(error);
+            console.error('Fetch error:', error);
             return null;
         }
     }
@@ -155,67 +160,58 @@
         return new Date(dateString).toLocaleString();
     }
 
-    async function refreshAccessToken(silent = false) {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) {
-            if (!silent) redirectToLogin("Session expired");
-            return null;
-        }
+    // Silent token refresh (no UI alerts)
+    async function silentlyRefreshToken() {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) return null;
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+            const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh: refreshToken })
             });
 
-            // Refresh token itself expired? Force login
-            if (response.status === 401) {
-                if (!silent) redirectToLogin("Session expired");
-                return null;
-            }
-
-            if (!response.ok) throw new Error(`Refresh failed (HTTP ${response.status})`);
+            if (!response.ok) return null;
 
             const { access } = await response.json();
-            if (!access) throw new Error("No access token received");
+            if (!access) return null;
 
-            localStorage.setItem("accessToken", access);
+            // Store the new token silently
+            localStorage.setItem('accessToken', access);
             return access;
 
         } catch (error) {
-            console.error("Refresh failed:", error);
-            if (!silent) {
-                clearAuthData();
-                redirectToLogin("Session expired");
-            }
+            console.error('Silent refresh failed:', error);
             return null;
         }
     }
 
-    function redirectToLogin(message) {
-        if (message) {
-            alert(message); // Or use a toast/notification library for better UX
-        }
-        // Clear any residual auth data
-        clearAuthData();
-        // Redirect to login (replace with your actual login path)
-        window.location.href = "/login/";
+    // Handle auth failure without alerting user
+    async function handleSilentAuthFailure() {
+        // Clear invalid tokens
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        
+        // You might want to:
+        // 1. Set a flag in localStorage to indicate session expired
+        // 2. Have your main app component check this flag periodically
+        // 3. Redirect to login only when the user tries to perform an action
+        localStorage.setItem('sessionExpired', 'true');
     }
-    function handleFetchError(error) {
-        console.error("API Request Failed:", error);
 
-        // Handle specific error cases
-        if (error.message.includes("expired") || error.message.includes("401")) {
-            redirectToLogin("Session expired - please login again");
-        } 
-        else if (error.message.includes("403")) {
-            redirectToLogin("Permission denied");
-        }
-        else {
-            // Generic error display (avoid showing raw errors to users)
-            alert("Operation failed. Please try again or contact support.");
-        }
+    // Initialize a session watcher
+    function initSessionWatcher() {
+        setInterval(() => {
+            if (localStorage.getItem('sessionExpired') === 'true') {
+                // Only redirect if not already on login page
+                if (!window.location.pathname.includes('/login')) {
+                    localStorage.removeItem('sessionExpired');
+                    window.location.href = '/login?silent_expire=true';
+                }
+            }
+        }, 5000); // Check every 5 seconds
     }
+
 </script>
 {% endblock %}
