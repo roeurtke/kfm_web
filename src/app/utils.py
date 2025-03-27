@@ -2,7 +2,7 @@
 def should_show_collapse(request):
     paths_to_check = [
         'incomes',
-        'expanses',
+        'expenses',
         'income_categories',
         'expense_categories',
         'users',

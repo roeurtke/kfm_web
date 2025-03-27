@@ -27,7 +27,7 @@ def expense(request):
     context = {
         'show_collapse_cash_flow': should_show_collapse(request),
     }
-    return render(request, 'expanses/list_expense.html', context)
+    return render(request, 'expenses/list_expense.html', context)
 
 def income_cetegory(request):
     context = {

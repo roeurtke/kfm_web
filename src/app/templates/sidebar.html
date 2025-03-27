@@ -36,7 +36,7 @@
         <div id="collapseCashFlow" class="collapse {% if show_collapse_cash_flow %}show{% endif %}" aria-labelledby="headingCashFlow" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item {% if 'incomes' in request.path %}active{% endif %}" href="{% url 'incomes' %}">Income</a>
-                <a class="collapse-item {% if 'expanses' in request.path %}active{% endif %}" href="{% url 'expanses' %}">Expense</a>
+                <a class="collapse-item {% if 'expenses' in request.path %}active{% endif %}" href="{% url 'expenses' %}">Expense</a>
                 <a class="collapse-item {% if 'income_categories' in request.path %}active{% endif %}" href="{% url 'income_categories' %}">Income Category</a>
                 <a class="collapse-item {% if 'expense_categories' in request.path %}active{% endif %}" href="{% url 'expense_categories' %}">Expense Category</a>
             </div>

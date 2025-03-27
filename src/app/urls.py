@@ -10,7 +10,7 @@ urlpatterns = [
     
     # Cash flow management
     path('incomes/', views.income, name='incomes'),
-    path('expanses/', views.expense, name='expanses'),
+    path('expenses/', views.expense, name='expenses'),
     path('income_categories/', views.income_cetegory, name='income_categories'),
     path('expense_categories/', views.expense_category, name='expense_categories'),
     
