@@ -16,33 +16,126 @@
             <table id="dataTable" class="table table-striped table-bordered table-hover" width="100%" cellspacing="0">
                 <thead class="thead-dark">
                     <tr>
+                        <th>Date</th>
                         <th>Name</th>
                         <th>Description</th>
+                        <th>Amount</th>
+                        <th>Currency</th>
+                        <th>Categroy</th>
+                        <th>User</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- Loop through the incomes and display them in the table -->
-                    <!-- {% for income in incomes %}
-                    <tr>
-                        <td>{{ income.name }}</td>
-                        <td>{{ income.description }}</td>
-                        <td>{{ income.status }}</td>
-                        <td>
-                            <a href="{% url 'incomes:edit_income' income.id %}" class="btn btn-primary btn-circle btn-sm">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="{% url 'incomes:delete_income' income.id %}" class="btn btn-danger btn-circle btn-sm">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %} -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<script>
+    // Check if valid income data was received...
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const incomes= await fetchIncomesWithSilentRefresh();
+            if (incomes && incomes.length > 0) {
+                renderIncomeTable(incomes);
+            } else {
+                console.warn("No incomes found or failed to fetch.");
+                renderIncomeTable([]); // Render an empty table
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderIncomeTable([]); // Render an empty table
+        }
+    });
 
+    // Configuration
+    const apiBaseUrl = 'http://127.0.0.1:8000/api';
+    const maxTokenRefreshAttempts = 1;
+
+    // Main function to fetch incomes with silent refresh
+    async function fetchIncomesWithSilentRefresh(retryCount = 0) {
+        // Get current token
+        let accessToken = localStorage.getItem('accessToken');
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}/incomes/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            // If unauthorized and we haven't maxed out retries
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+                const newToken = await silentlyRefreshToken();
+                if (newToken) {
+                    // Retry the request with new token
+                    return fetchIncomesWithSilentRefresh(retryCount + 1);
+                }
+            }
+
+            // If still unauthorized after refresh attempts
+            if (response.status === 401) {
+                await handleSilentAuthFailure();
+                return null;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            return await response.json();
+
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return null;
+        }
+    }
+
+    function renderIncomeTable(users) {
+        const tableBody = document.querySelector("#dataTable tbody");
+        if (!tableBody) return;
+
+        // Clear existing rows (if any)
+        tableBody.innerHTML = '';
+
+        // Create rows for each user
+        incomes.forEach(income => {
+            const row = document.createElement("tr");
+
+            // Helper to safely insert cell data
+            const addCell = (value) => {
+                const td = document.createElement("td");
+                td.textContent = value || 'N/A';
+                return td;
+            };
+
+            // Add cells in order of your table headers
+            row.appendChild(addCell(income.date));
+            row.appendChild(addCell(income.name));
+            row.appendChild(addCell(income.description));
+            row.appendChild(addCell(income.amount));
+            row.appendChild(addCell(income.currency));
+            row.appendChild(addCell(income.expense_category?.name || income.expense_category));
+            row.appendChild(addCell(income.status));
+            row.appendChild(addCell(income.user?.name || income.user));
+
+            // Action buttons
+            const actionCell = document.createElement("td");
+            actionCell.appendChild(createActionLink(`/incomes/${income.id}/`, "View", "btn-info"));
+            actionCell.appendChild(createActionLink(`/incomes/${income.id}/edit/`, "Edit", "btn-warning"));
+            actionCell.appendChild(createActionLink(`/incomes/${income.id}/delete/`, "Delete", "btn-danger", true));
+            
+            row.appendChild(actionCell);
+            tableBody.appendChild(row);
+        });
+
+        // Initialize DataTable (if using jQuery DataTables)
+        initializeDataTable();
+    }
+</script>
 {% endblock %}
