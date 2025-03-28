@@ -60,7 +60,7 @@ table.dataTable thead th {
 }
 
 table.dataTable tbody th, table.dataTable tbody td {
-    padding: 8px 12px;
+    padding: 2px 12px;
     text-transform: lowercase;
 }
 
