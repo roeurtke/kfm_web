@@ -96,7 +96,7 @@
         }
     }
 
-    function renderIncomeTable(users) {
+    function renderIncomeTable(incomes) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
 
@@ -120,9 +120,9 @@
             row.appendChild(addCell(income.description));
             row.appendChild(addCell(income.amount));
             row.appendChild(addCell(income.currency));
-            row.appendChild(addCell(income.expense_category?.name || income.expense_category));
+            row.appendChild(addCell(income.income_category.name));
+            row.appendChild(addCell(income.user.username));
             row.appendChild(addCell(income.status));
-            row.appendChild(addCell(income.user?.name || income.user));
 
             // Action buttons
             const actionCell = document.createElement("td");
