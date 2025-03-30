@@ -47,6 +47,12 @@ def user(request):
     }
     return render(request, 'users/list_user.html', context)
 
+def create_user(request):
+    context = {
+        'show_collapse_setting': should_show_collapse(request),
+    }
+    return render(request, 'users/form_create_user.html', context)
+
 def role(request):
     context = {
         'show_collapse_setting': should_show_collapse(request),

@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">CREATE NEW USER</h6>
+    </div>
+    <div class="card-body">
+        <form id="createUserForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="limitBalance">Limit Balance</label>
+                        <input type="number" class="form-control" id="limitBalance" name="limitBalance" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="role">Role*</label>
+                        <select class="form-control" id="role" name="role" required>
+                            <!-- Roles will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Create User</button>
+                <a href="{% url 'users' %}" class="btn btn-secondary ml-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadRoles();
+        setupCreateUserForm();
+    });
+
+    const apiBaseUrl = 'http://127.0.0.1:8000/api';
+    const maxTokenRefreshAttempts = 1;
+
+    async function loadRoles() {
+        let accessToken = localStorage.getItem('accessToken');
+        const roleSelect = document.getElementById('role');
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}/roles/`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.status === 401) {
+                const newToken = await silentlyRefreshToken();
+                if (newToken) return loadRoles();
+            }
+
+            if (!response.ok) throw new Error('Failed to load roles');
+            
+            const roles = await response.json();
+            roleSelect.innerHTML = '';
+
+            // Add placeholder option
+            const placeholderOption = new Option('-- Select Role --', '');
+            placeholderOption.disabled = true;
+            placeholderOption.selected = true;
+            roleSelect.add(placeholderOption);
+            
+            // Add role options
+            roles.forEach(role => {
+                const option = new Option(role.name, role.id);
+                roleSelect.add(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading roles:', error);
+            showAlert('Failed to load roles. Using default options.', 'warning');
+            
+            // Fallback to default options
+            roleSelect.innerHTML = `
+                <option value="" disabled selected>-- Select Role --</option>
+                <option value="1">User</option>
+                <option value="2">Admin</option>
+            `;
+        }
+    }
+
+    async function createUser(userData, retryCount = 0) {
+        let accessToken = localStorage.getItem('accessToken');
+        
+        try {
+            // Ensure spending_limit is properly formatted
+            if (userData.spending_limit !== null && userData.spending_limit !== undefined) {
+                userData.spending_limit = parseFloat(userData.spending_limit);
+            }
+
+            const response = await fetch(`${apiBaseUrl}/users/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    username: userData.username,
+                    email: userData.email,
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                    password: userData.password,
+                    role_id: parseInt(userData.role_id), // Ensure this is a number
+                    spending_limit: userData.spending_limit
+                })
+            });
+
+            // Handle token refresh if needed
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+                const newToken = await silentlyRefreshToken();
+                if (newToken) return createUser(userData, retryCount + 1);
+            }
+
+            if (response.status === 400) {
+                const errorData = await response.json();
+                return { 
+                    success: false, 
+                    error: 'Validation failed',
+                    details: errorData,
+                    status: 400
+                };
+            }
+
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            return { success: true, data: await response.json() };
+
+        } catch (error) {
+            console.error('Create user error:', error);
+            return { 
+                success: false, 
+                error: error.message,
+                status: error.response?.status
+            };
+        }
+    }
+
+    function setupCreateUserForm() {
+        const createForm = document.getElementById('createUserForm');
+        if (!createForm) return;
+
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get form values
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                first_name: document.getElementById('firstName').value.trim(),
+                last_name: document.getElementById('lastName').value.trim(),
+                password: document.getElementById('password').value,
+                confirmPassword: document.getElementById('confirmPassword').value,
+                limitBalance: document.getElementById('limitBalance').value,
+                role_id: document.getElementById('role').value
+            };
+
+            // Validate required fields
+            if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword || !formData.role_id) {
+                showAlert('Please fill in all required fields', 'danger');
+                return;
+            }
+
+            // Validate password match
+            if (formData.password !== formData.confirmPassword) {
+                showAlert('Passwords do not match', 'danger');
+                return;
+            }
+
+            // Prepare user data
+            const userData = {
+                username: formData.username,
+                email: formData.email,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                password: formData.password,
+                role_id: formData.role_id,
+                spending_limit: formData.limitBalance || null
+            };
+
+            // Show loading state
+            const submitBtn = createForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+
+            try {
+                const result = await createUser(userData);
+                
+                if (result.success) {
+                    showAlert('User created successfully!', 'success');
+                    createForm.reset();
+                    document.getElementById('role').selectedIndex = 0;
+                } else {
+                    // Enhanced error handling for 400 responses
+                    let errorMessage = result.error;
+                    if (result.status === 400 && result.details) {
+                        if (result.details.errors) {
+                            errorMessage += '<br>' + Object.entries(result.details.errors)
+                                .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+                                .join('<br>');
+                        } else if (result.details.message) {
+                            errorMessage = result.details.message;
+                        }
+                    }
+                    showAlert(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Form submission error:', error);
+                showAlert('An unexpected error occurred', 'danger');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        });
+    }
+
+    function showAlert(message, type) {
+        const existingAlert = document.querySelector('.alert');
+        if (existingAlert) existingAlert.remove();
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        `;
+
+        const cardBody = document.querySelector('.card-body');
+        if (cardBody) {
+            cardBody.insertBefore(alertDiv, cardBody.firstChild);
+        }
+
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    async function silentlyRefreshToken() {
+        try {
+            const response = await fetch(`${apiBaseUrl}/auth/refresh/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    refresh_token: localStorage.getItem('refreshToken')
+                })
+            });
+
+            if (!response.ok) throw new Error('Token refresh failed');
+
+            const data = await response.json();
+            localStorage.setItem('accessToken', data.access_token);
+            return data.access_token;
+
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            return null;
+        }
+    }
+
+    async function handleSilentAuthFailure() {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login/';
+    }
+</script>
+{% endblock %}
