@@ -25,11 +25,111 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Loop through the incomes and display them in the table -->
+                    <!-- Loop through the expense-categories and display them in the table -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<script>
+    // Check if valid expense-categories data was received...
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const expense_categories= await fetchExpenseCategoriesWithSilentRefresh();
+            if (expense_categories && expense_categories.length > 0) {
+                renderExpenseCategoryTable(expense_categories);
+            } else {
+                console.warn("No expense-categories found or failed to fetch.");
+                renderExpenseCategoryTable([]); // Render an empty table
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderExpenseCategoryTable([]); // Render an empty table
+        }
+    });
 
+    // Configuration
+    const apiBaseUrl = 'http://127.0.0.1:8000/api';
+    const maxTokenRefreshAttempts = 1;
+
+    // Main function to fetch expense-categories with silent refresh
+    async function fetchExpenseCategoriesWithSilentRefresh(retryCount = 0) {
+        // Get current token
+        let accessToken = localStorage.getItem('accessToken');
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}/expense-categories/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            // If unauthorized and we haven't maxed out retries
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+                const newToken = await silentlyRefreshToken();
+                if (newToken) {
+                    // Retry the request with new token
+                    return fetchExpenseCategoriesWithSilentRefresh(retryCount + 1);
+                }
+            }
+
+            // If still unauthorized after refresh attempts
+            if (response.status === 401) {
+                await handleSilentAuthFailure();
+                return null;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            return await response.json();
+
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return null;
+        }
+    }
+
+    function renderExpenseCategoryTable(expense_categories) {
+        const tableBody = document.querySelector("#dataTable tbody");
+        if (!tableBody) return;
+
+        // Clear existing rows (if any)
+        tableBody.innerHTML = '';
+
+        // Create rows for each user
+        expense_categories.forEach(expense_category => {
+            const row = document.createElement("tr");
+
+            // Helper to safely insert cell data
+            const addCell = (value) => {
+                const td = document.createElement("td");
+                td.textContent = value || 'N/A';
+                return td;
+            };
+
+            // Add cells in order of your table headers
+            row.appendChild(addCell(expense_category.name));
+            row.appendChild(addCell(expense_category.description));
+            row.appendChild(addCell(expense_category.master_report));
+            row.appendChild(addCell(expense_category.user.username));
+            row.appendChild(addCell(expense_category.status));
+
+            // Action buttons
+            const actionCell = document.createElement("td");
+            actionCell.appendChild(createActionLink(`/expense_categories/${expense_category.id}/`, "View", "btn-info"));
+            actionCell.appendChild(createActionLink(`/expense_categories/${expense_category.id}/edit/`, "Edit", "btn-warning"));
+            actionCell.appendChild(createActionLink(`/expense_categories/${expense_category.id}/delete/`, "Delete", "btn-danger", true));
+            
+            row.appendChild(actionCell);
+            tableBody.appendChild(row);
+        });
+
+        // Initialize DataTable (if using jQuery DataTables)
+        initializeDataTable();
+    }
+</script>
 {% endblock %}
