@@ -18,16 +18,118 @@
                     <tr>
                         <th>Name</th>
                         <th>Description</th>
+                        <th>Master Report</th>
+                        <th>User</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Loop through the incomes and display them in the table -->
+                    <!-- Loop through the income-categories and display them in the table -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<script>
+    // Check if valid income-categories data was received...
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const income_categories= await fetchIncomeCategoriesWithSilentRefresh();
+            if (income_categories && income_categories.length > 0) {
+                renderIncomeCategoryTable(income_categories);
+            } else {
+                console.warn("No income-categories found or failed to fetch.");
+                renderIncomeCategoryTable([]); // Render an empty table
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderIncomeCategoryTable([]); // Render an empty table
+        }
+    });
 
+    // Configuration
+    const apiBaseUrl = 'http://127.0.0.1:8000/api';
+    const maxTokenRefreshAttempts = 1;
+
+    // Main function to fetch income-categories with silent refresh
+    async function fetchIncomeCategoriesWithSilentRefresh(retryCount = 0) {
+        // Get current token
+        let accessToken = localStorage.getItem('accessToken');
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}/income-categories/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            // If unauthorized and we haven't maxed out retries
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+                const newToken = await silentlyRefreshToken();
+                if (newToken) {
+                    // Retry the request with new token
+                    return fetchIncomeCategoriesWithSilentRefresh(retryCount + 1);
+                }
+            }
+
+            // If still unauthorized after refresh attempts
+            if (response.status === 401) {
+                await handleSilentAuthFailure();
+                return null;
+            }
+
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            return await response.json();
+
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return null;
+        }
+    }
+
+    function renderIncomeCategoryTable(income_categories) {
+        const tableBody = document.querySelector("#dataTable tbody");
+        if (!tableBody) return;
+
+        // Clear existing rows (if any)
+        tableBody.innerHTML = '';
+
+        // Create rows for each user
+        income_categories.forEach(income_category => {
+            const row = document.createElement("tr");
+
+            // Helper to safely insert cell data
+            const addCell = (value) => {
+                const td = document.createElement("td");
+                td.textContent = value || 'N/A';
+                return td;
+            };
+
+            // Add cells in order of your table headers
+            row.appendChild(addCell(income_category.name));
+            row.appendChild(addCell(income_category.description));
+            row.appendChild(addCell(income_category.master_report));
+            row.appendChild(addCell(income_category.user.username));
+            row.appendChild(addCell(income_category.status));
+
+            // Action buttons
+            const actionCell = document.createElement("td");
+            actionCell.appendChild(createActionLink(`/income_categories/${income_category.id}/`, "View", "btn-info"));
+            actionCell.appendChild(createActionLink(`/income_categories/${income_category.id}/edit/`, "Edit", "btn-warning"));
+            actionCell.appendChild(createActionLink(`/income_categories/${income_category.id}/delete/`, "Delete", "btn-danger", true));
+            
+            row.appendChild(actionCell);
+            tableBody.appendChild(row);
+        });
+
+        // Initialize DataTable (if using jQuery DataTables)
+        initializeDataTable();
+    }
+</script>
 {% endblock %}
