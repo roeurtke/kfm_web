@@ -220,47 +220,81 @@
             if (!dateString) return 'N/A';
             return new Date(dateString).toLocaleString();
         }
-
+    </script>
+    <script>
+        // Global variable to track activity
+        let lastActivityTime = Date.now();
+        const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+    
+        // Track user activity
+        function trackActivity() {
+            lastActivityTime = Date.now();
+        }
+    
+        // Set up activity listeners
+        function setupActivityListeners() {
+            // Listen for various user activities
+            ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
+                window.addEventListener(event, trackActivity);
+            });
+        }
+    
+        // Check inactivity periodically
+        function checkInactivity() {
+            const currentTime = Date.now();
+            if (currentTime - lastActivityTime > INACTIVITY_TIMEOUT) {
+                // Clear tokens and redirect to login
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/login?inactive=true';
+                }
+            }
+        }
+    
+        // Initialize inactivity timer
+        function initInactivityTimer() {
+            setupActivityListeners();
+            setInterval(checkInactivity, 60000); // Check every minute
+        }
+    
         // Silent token refresh (no UI alerts)
         async function silentlyRefreshToken() {
             const refreshToken = localStorage.getItem('refreshToken');
             if (!refreshToken) return null;
-
+    
             try {
                 const response = await fetch(`${apiBaseUrl}/token/refresh/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ refresh: refreshToken })
                 });
-
+    
                 if (!response.ok) return null;
-
+    
                 const { access } = await response.json();
                 if (!access) return null;
-
+    
                 // Store the new token silently
                 localStorage.setItem('accessToken', access);
                 return access;
-
+    
             } catch (error) {
                 console.error('Silent refresh failed:', error);
                 return null;
             }
         }
-
+    
         // Handle auth failure without alerting user
         async function handleSilentAuthFailure() {
             // Clear invalid tokens
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             
-            // You might want to:
-            // 1. Set a flag in localStorage to indicate session expired
-            // 2. Have your main app component check this flag periodically
-            // 3. Redirect to login only when the user tries to perform an action
+            // Set session expired flag
             localStorage.setItem('sessionExpired', 'true');
         }
-
+    
         // Initialize a session watcher
         function initSessionWatcher() {
             setInterval(() => {
@@ -273,6 +307,13 @@
                 }
             }, 5000); // Check every 5 seconds
         }
+    
+        // Initialize everything when the script loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initInactivityTimer();
+            initSessionWatcher();
+            trackActivity(); // Set initial activity time
+        });
     </script>
     <script>
         // Logout the user
