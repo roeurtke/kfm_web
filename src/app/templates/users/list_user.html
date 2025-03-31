@@ -3,9 +3,6 @@
 
 {% block content %}
 
-<!-- Page Heading -->
-<!-- <h1 class="h3 mb-2 text-gray-800">List User</h1> -->
-
 <!-- DataTales Example -->
 <div class="card shadow mb-4">
     <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -41,7 +38,7 @@
     // Check if valid user data was received...
     document.addEventListener("DOMContentLoaded", async () => {
         try {
-            const users = await fetchUsersWithSilentRefresh();
+            const users = await fetchUsers();
             if (users && users.length > 0) {
                 renderUserTable(users);
             } else {
@@ -59,7 +56,7 @@
     const maxTokenRefreshAttempts = 1;
 
     // Main function to fetch users with silent refresh
-    async function fetchUsersWithSilentRefresh(retryCount = 0) {
+    async function fetchUsers(retryCount = 0) {
         // Get current token
         let accessToken = localStorage.getItem('accessToken');
         
