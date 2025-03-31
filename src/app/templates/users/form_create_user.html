@@ -98,7 +98,7 @@
             });
 
             if (response.status === 401) {
-                const newToken = await silentlyRefreshToken();
+                const newToken = await RefreshToken();
                 if (newToken) return loadRoles();
             }
 
@@ -147,25 +147,18 @@
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${accessToken}`
                 },
-                body: JSON.stringify({
-                    username: userData.username,
-                    email: userData.email,
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    password: userData.password,
-                    role_id: parseInt(userData.role_id), // Ensure this is a number
-                    spending_limit: userData.spending_limit
-                })
+                body: JSON.stringify(userData)
             });
 
             // Handle token refresh if needed
             if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
-                const newToken = await silentlyRefreshToken();
+                const newToken = await RefreshToken();
                 if (newToken) return createUser(userData, retryCount + 1);
             }
 
             if (response.status === 400) {
                 const errorData = await response.json();
+                console.log('Validation errors:', errorData); // Add this line
                 return { 
                     success: false, 
                     error: 'Validation failed',
@@ -229,7 +222,7 @@
                 last_name: formData.last_name,
                 password: formData.password,
                 role_id: formData.role_id,
-                spending_limit: formData.limitBalance || null
+                spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null
             };
 
             // Show loading state
@@ -246,11 +239,10 @@
                     createForm.reset();
                     document.getElementById('role').selectedIndex = 0;
                 } else {
-                    // Enhanced error handling for 400 responses
-                    let errorMessage = result.error;
-                    if (result.status === 400 && result.details) {
+                    let errorMessage = 'Failed to create user';
+                    if (result.details) {
                         if (result.details.errors) {
-                            errorMessage += '<br>' + Object.entries(result.details.errors)
+                            errorMessage = Object.entries(result.details.errors)
                                 .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
                                 .join('<br>');
                         } else if (result.details.message) {
@@ -259,6 +251,7 @@
                     }
                     showAlert(errorMessage, 'danger');
                 }
+
             } catch (error) {
                 console.error('Form submission error:', error);
                 showAlert('An unexpected error occurred', 'danger');
@@ -293,7 +286,7 @@
         }, 5000);
     }
 
-    async function silentlyRefreshToken() {
+    async function RefreshToken() {
         try {
             const response = await fetch(`${apiBaseUrl}/auth/refresh/`, {
                 method: 'POST',
