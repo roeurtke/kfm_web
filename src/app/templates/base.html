@@ -220,6 +220,49 @@
         }
     </script>
     <script>
+        // Auth Functions
+        async function RefreshToken() {
+            try {
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (!refreshToken) {
+                    throw new Error('No refresh token available');
+                }
+        
+                // Try the most common endpoint first
+                let response = await fetch(`${apiBaseUrl}/auth/refresh/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: refreshToken })  // Note: Some APIs use "refresh" instead of "refresh_token"
+                });
+        
+                // If 404, try alternative common endpoints
+                if (response.status === 404) {
+                    response = await fetch(`${apiBaseUrl}/token/refresh/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refresh_token: refreshToken })
+                    });
+                }
+        
+                if (!response.ok) throw new Error(`Token refresh failed with status ${response.status}`);
+        
+                const data = await response.json();
+                
+                // Handle different response formats
+                const newAccessToken = data.access || data.access_token;
+                if (!newAccessToken) throw new Error('No access token in response');
+                
+                localStorage.setItem('accessToken', newAccessToken);
+                return newAccessToken;
+        
+            } catch (error) {
+                console.error('Token refresh error:', error);
+                window.location.href = '/login/';
+                return null;
+            }
+        }
+    </script>
+    <script>
         async function logoutUser() {
             const token = localStorage.getItem("accessToken");
             const refreshToken = localStorage.getItem("refreshToken");

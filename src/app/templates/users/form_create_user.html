@@ -225,26 +225,5 @@
             }
         });
     }
-    
-    // Auth Functions
-    async function RefreshToken() {
-        try {
-            const response = await fetch(`${apiBaseUrl}/auth/refresh/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh_token: localStorage.getItem('refreshToken') })
-            });
-    
-            if (!response.ok) throw new Error('Token refresh failed');
-            
-            const data = await response.json();
-            localStorage.setItem('accessToken', data.access_token);
-            return data.access_token;
-    
-        } catch (error) {
-            console.error('Token refresh error:', error);
-            return null;
-        }
-    }
 </script>
 {% endblock %}
