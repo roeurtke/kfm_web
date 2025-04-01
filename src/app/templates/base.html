@@ -82,156 +82,65 @@
 
     <!-- Page level custom scripts -->
     <script>
-        // Call the dataTables jQuery plugin
-        async function initializeDataTable() {
-            $('#dataTable').DataTable({
-                dom: `
-                    <'top d-flex justify-content-between align-items-center'<'d-flex'<'mr-3'l><'dt-buttons'B>><'ml-auto'f>>
-                    <'row'<'col-sm-12'tr>>
-                    <'row'<'col-sm-12 col-md-4'i><'col-sm-12 col-md-8'p>>
-                `,
-                buttons: [
-                    { 
-                        extend: 'csvHtml5', 
-                        className: 'btn-sm', 
-                        text: 'CSV  &nbsp;&nbsp;|',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    },
-                    { 
-                        extend: 'excelHtml5', 
-                        className: 'btn-sm', 
-                        text: 'EXCEL  &nbsp;&nbsp;|',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    },
-                    { 
-                        extend: 'pdfHtml5', 
-                        className: 'btn-sm', 
-                        text: 'PDF',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    }
-                ],
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Search records...",
-                    paginate: {
-                        previous: '<i class="fas fa-chevron-left"></i>',
-                        next: '<i class="fas fa-chevron-right"></i>'
-                    }
-                },
-                responsive: true
-            });
-        }
-    </script>
-    <script> 
-        // Collapse all elements with the 'collapse' class
-        $(document).ready(function() {
-            $('.collapse').each(function() {
-                if ($(this).find('.active').length > 0) {
-                    $(this).collapse('show');
-                } else {
-                    $(this).collapse('hide');
-                }
-            });
-        });
-    </script>
-    <script>    
-        // Check if the user is logged in
+        // ================== Authentication Functions ==================
         document.addEventListener("DOMContentLoaded", function () {
+            // Check if user is logged in
             const accessToken = localStorage.getItem("accessToken");
-            if (!accessToken) {
+            if (!accessToken && window.location.pathname !== "/login/") {
                 window.location.href = "/login/";
             }
+    
+            // Initialize backend health check if not on login page
+            if (window.location.pathname !== "/login/") {
+                checkBackend();
+            }
+    
+            // Initialize collapse elements
+            $('.collapse').each(function() {
+                $(this).collapse($(this).find('.active').length > 0 ? 'show' : 'hide');
+            });
         });
-    </script>
-    <script>
-        // Check if the backend is healthy
+    
         async function checkBackend() {
             const backendUrl = "https://jsonplaceholder.typicode.com/posts/1";
-            const timeoutDuration = 3000; // 3 seconds
-        
+            const timeoutDuration = 3000;
+    
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
-        
-                console.log("Sending request to backend...");
+    
                 const response = await fetch(backendUrl, {
                     signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                 });
-        
-                clearTimeout(timeoutId); // Clear timeout if response is received
-        
-                console.log("Response status:", response.status, response.statusText);
-                console.log("Response headers:", [...response.headers.entries()]);
-        
+    
+                clearTimeout(timeoutId);
+    
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error("Backend returned non-OK status:", response.status, response.statusText);
-                    console.error("Response body:", errorText);
                     throw new Error(`Backend error: ${response.status} ${response.statusText}`);
                 }
-        
-                const data = await response.json();
-                console.log("Backend is healthy:", data);
-        
+    
+                console.log("Backend is healthy");
             } catch (error) {
                 console.error("Backend is down:", error.message);
-        
-                // Only redirect to login if the user is not already on the login page
                 if (window.location.pathname !== "/login/") {
-                    console.log("Redirecting to login page...");
                     window.location.href = "/login/";
                 }
             }
         }
-        
-        // Run the checkBackend function when the DOM is fully loaded
-        document.addEventListener("DOMContentLoaded", checkBackend);
-    </script>
-    <script>
-        // ================== Helper Functions ==================
-        function createActionLink(href, text, className, isDelete = false) {
-            const link = document.createElement("a");
-            link.href = href;
-            link.textContent = text;
-            link.className = `btn btn-sm ${className} mx-1`;
-
-            if (isDelete) {
-                link.onclick = (e) => {
-                    if (!confirm("Are you sure you want to delete this user?")) {
-                        e.preventDefault();
-                    }
-                };
-            }
-            return link;
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return 'N/A';
-            return new Date(dateString).toLocaleString();
-        }
-    </script>
-    <script>
+    
         async function logoutUser() {
             const token = localStorage.getItem("accessToken");
             const refreshToken = localStorage.getItem("refreshToken");
     
             if (!token || !refreshToken) {
-                console.error("No valid tokens found. Redirecting to login.");
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("refreshToken");
                 window.location.href = "/login/";
                 return;
             }
-
+    
             try {
                 const response = await fetch("http://127.0.0.1:8000/api/logout/", {
                     method: "POST",
@@ -246,18 +155,81 @@
                     const errorData = await response.json();
                     throw new Error(errorData.error || `Logout failed with status: ${response.status}`);
                 }
-    
-                // Clear stored tokens and redirect to login
+            } catch (error) {
+                console.error("Logout error:", error);
+            } finally {
                 localStorage.removeItem("accessToken");
                 localStorage.removeItem("refreshToken");
                 window.location.href = "/login/";
-    
-            } catch (error) {
-                console.error("Logout error:", error);
-                alert("Logout failed: " + error.message);
             }
         }
-    </script>    
+    </script>
+    
+    <script>
+        // ================== DataTable Initialization ==================
+        async function initializeDataTable() {
+            $('#dataTable').DataTable({
+                dom: `
+                    <'top d-flex justify-content-between align-items-center'<'d-flex'<'mr-3'l><'dt-buttons'B>><'ml-auto'f>>
+                    <'row'<'col-sm-12'tr>>
+                    <'row'<'col-sm-12 col-md-4'i><'col-sm-12 col-md-8'p>>
+                `,
+                buttons: [
+                    { 
+                        extend: 'csvHtml5', 
+                        className: 'btn-sm', 
+                        text: 'CSV  &nbsp;&nbsp;|',
+                        exportOptions: { columns: ':visible' }
+                    },
+                    { 
+                        extend: 'excelHtml5', 
+                        className: 'btn-sm', 
+                        text: 'EXCEL  &nbsp;&nbsp;|',
+                        exportOptions: { columns: ':visible' }
+                    },
+                    { 
+                        extend: 'pdfHtml5', 
+                        className: 'btn-sm', 
+                        text: 'PDF',
+                        exportOptions: { columns: ':visible' }
+                    }
+                ],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search records...",
+                    paginate: {
+                        previous: '<i class="fas fa-chevron-left"></i>',
+                        next: '<i class="fas fa-chevron-right"></i>'
+                    }
+                },
+                responsive: true
+            });
+        }
+    </script>
+    
+    <script>
+        // ================== Helper Functions ==================
+        function createActionLink(href, text, className, isDelete = false) {
+            const link = document.createElement("a");
+            link.href = href;
+            link.textContent = text;
+            link.className = `btn btn-sm ${className} mx-1`;
+    
+            if (isDelete) {
+                link.onclick = (e) => {
+                    if (!confirm("Are you sure you want to delete this user?")) {
+                        e.preventDefault();
+                    }
+                };
+            }
+            return link;
+        }
+    
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            return new Date(dateString).toLocaleString();
+        }
+    </script>   
 </body>
 
 </html>
