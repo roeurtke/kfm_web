@@ -78,142 +78,106 @@
     </div>
 </div>
 <script>
-    // Wait until the DOM is fully loaded before executing the script
     document.addEventListener("DOMContentLoaded", async () => {
-        // Load available roles dynamically from the server
         await loadRoles();
-
-        // Set up event listeners and validation for the user creation form
         setupCreateUserForm();
     });
-
+    
     const apiBaseUrl = 'http://127.0.0.1:8000/api';
     const maxTokenRefreshAttempts = 1;
-
-    async function loadRoles() {
-        let accessToken = localStorage.getItem('accessToken');
-        const roleSelect = document.getElementById('role');
+    
+    // Utility Functions
+    const showAlert = (message, type) => {
+        document.querySelector('.alert')?.remove();
         
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `${message}<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span></button>`;
+        
+        document.querySelector('.card-body')?.prepend(alertDiv);
+        setTimeout(() => alertDiv.remove(), 5000);
+    };
+    
+    const handleApiError = (error, context) => {
+        console.error(`${context} error:`, error);
+        return { success: false, error: error.message };
+    };
+    
+    // Role Functions
+    const populateRoleSelect = (roles, selectElement) => {
+        selectElement.innerHTML = '';
+        selectElement.add(new Option('-- Select Role --', '', true, false));
+        selectElement.options[0].disabled = true;
+        roles.forEach(role => selectElement.add(new Option(role.name, role.id)));
+    };
+    
+    async function loadRoles() {
+        const roleSelect = document.getElementById('role');
         try {
             const response = await fetch(`${apiBaseUrl}/roles/`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
             });
-
-            if (response.status === 401) {
-                const newToken = await RefreshToken();
-                if (newToken) return loadRoles();
-            }
-
+    
+            if (response.status === 401 && await RefreshToken()) 
+                return loadRoles();
+            
             if (!response.ok) throw new Error('Failed to load roles');
             
-            const roles = await response.json();
-            roleSelect.innerHTML = '';
-
-            // Add placeholder option
-            roleSelect.add(new Option('-- Select Role --', '', true, false));
-            roleSelect.options[0].disabled = true;
-
-            // Add role options
-            roles.forEach(role => {
-                roleSelect.add(new Option(role.name, role.id));
-            });
-
-            // The required attribute will handle validation
+            populateRoleSelect(await response.json(), roleSelect);
             roleSelect.required = true;
-
-            roleSelect.addEventListener('change', function() {
-                // This forces the DOM to update the selected attribute
-                const options = this.options;
-                for (let i = 0; i < options.length; i++) {
-                    options[i].removeAttribute('selected');
-                }
-                options[this.selectedIndex].setAttribute('selected', '');
-            });
-
+    
         } catch (error) {
             console.error('Error loading roles:', error);
             showAlert('Failed to load roles. Using default options.', 'warning');
-            
-            // Fallback to default options
             roleSelect.innerHTML = `
-                <option value="" disabled selected>-- Select Role --</option>
-                <option value="1">User</option>
-                <option value="2">Admin</option>
-            `;
+                <option value="" disabled selected>-- Select Role --</option>`;
         }
     }
-
+    
+    // User Functions
     async function createUser(userData, retryCount = 0) {
-        let accessToken = localStorage.getItem('accessToken');
-        
         try {
-            // Prepare the request payload with the correct field names
             const payload = {
-                username: userData.username,
-                email: userData.email,
-                first_name: userData.first_name,
-                last_name: userData.last_name,
-                password: userData.password,
-                role: userData.role_id,  // Changed from role_id to role to match backend
-                spending_limit: userData.spending_limit !== null && userData.spending_limit !== undefined 
-                    ? parseFloat(userData.spending_limit) 
-                    : null
+                ...userData,
+                role: userData.role_id,
+                spending_limit: userData.spending_limit ? parseFloat(userData.spending_limit) : null
             };
-
-            console.log('Sending user data:', payload);  // Debugging log
-
+    
             const response = await fetch(`${apiBaseUrl}/users/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
                 body: JSON.stringify(payload)
             });
-
-            // Handle token refresh if needed
-            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
-                const newToken = await RefreshToken();
-                if (newToken) return createUser(userData, retryCount + 1);
-            }
-
+    
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts && await RefreshToken()) 
+                return createUser(userData, retryCount + 1);
+            
             if (response.status === 400) {
                 const errorData = await response.json();
-                console.log('Validation errors:', errorData);
-                return { 
-                    success: false, 
-                    error: 'Validation failed',
-                    details: errorData,
-                    status: 400
-                };
+                return { success: false, error: 'Validation failed', details: errorData, status: 400 };
             }
-
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-
+    
+            if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
             return { success: true, data: await response.json() };
-
+    
         } catch (error) {
-            console.error('Create user error:', error);
-            return { 
-                success: false, 
-                error: error.message,
-                status: error.response?.status
-            };
+            return handleApiError(error, 'Create user');
         }
     }
-
+    
+    // Form Handling
     function setupCreateUserForm() {
         const createForm = document.getElementById('createUserForm');
         if (!createForm) return;
-
+    
         createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Get form values
             const formData = {
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
@@ -224,119 +188,63 @@
                 limitBalance: document.getElementById('limitBalance').value,
                 role_id: document.getElementById('role').value
             };
-
-            // Validate required fields
-            if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword || !formData.role_id) {
-                showAlert('Please fill in all required fields', 'danger');
-                return;
-            }
-
-            // Validate password match
-            if (formData.password !== formData.confirmPassword) {
-                showAlert('Passwords do not match', 'danger');
-                return;
-            }
-
-            // Prepare user data
-            const userData = {
-                username: formData.username,
-                email: formData.email,
-                first_name: formData.first_name,
-                last_name: formData.last_name,
-                password: formData.password,
-                role_id: formData.role_id,
-                spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null
-            };
-
-            // Show loading state
+    
+            // Validation
+            if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword || !formData.role_id) 
+                return showAlert('Please fill in all required fields', 'danger');
+            if (formData.password !== formData.confirmPassword) 
+                return showAlert('Passwords do not match', 'danger');
+    
             const submitBtn = createForm.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
-
+    
             try {
-                const result = await createUser(userData);
+                const result = await createUser({
+                    ...formData,
+                    spending_limit: formData.limitBalance
+                });
                 
                 if (result.success) {
                     showAlert('User created successfully!', 'success');
                     createForm.reset();
                     document.getElementById('role').selectedIndex = 0;
                 } else {
-                    let errorMessage = 'Failed to create user';
-                    if (result.details) {
-                        if (result.details.errors) {
-                            errorMessage = Object.entries(result.details.errors)
-                                .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-                                .join('<br>');
-                        } else if (result.details.message) {
-                            errorMessage = result.details.message;
-                        }
-                    }
+                    const errorMessage = result.details?.errors 
+                        ? Object.entries(result.details.errors)
+                            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+                            .join('<br>')
+                        : result.details?.message || 'Failed to create user';
                     showAlert(errorMessage, 'danger');
                 }
-
             } catch (error) {
-                console.error('Form submission error:', error);
                 showAlert('An unexpected error occurred', 'danger');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalBtnText;
+                submitBtn.textContent = 'Create User';
             }
         });
     }
-
-    function showAlert(message, type) {
-        const existingAlert = document.querySelector('.alert');
-        if (existingAlert) existingAlert.remove();
-
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.role = 'alert';
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        `;
-
-        const cardBody = document.querySelector('.card-body');
-        if (cardBody) {
-            cardBody.insertBefore(alertDiv, cardBody.firstChild);
-        }
-
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 5000);
-    }
-
+    
+    // Auth Functions
     async function RefreshToken() {
         try {
             const response = await fetch(`${apiBaseUrl}/auth/refresh/`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    refresh_token: localStorage.getItem('refreshToken')
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: localStorage.getItem('refreshToken') })
             });
-
+    
             if (!response.ok) throw new Error('Token refresh failed');
-
+            
             const data = await response.json();
             localStorage.setItem('accessToken', data.access_token);
             return data.access_token;
-
+    
         } catch (error) {
             console.error('Token refresh error:', error);
             return null;
         }
-    }
-
-    async function handleSilentAuthFailure() {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login/';
     }
 </script>
 {% endblock %}
