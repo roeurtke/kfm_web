@@ -13,6 +13,7 @@
             <table id="dataTable" class="table table-striped table-bordered table-hover" width="100%" cellspacing="0">
                 <thead class="thead-dark">
                     <tr>
+                        <th>ID</th>
                         <th>Name</th>
                         <th>Description</th>
                         <th>Master Report</th>
@@ -76,8 +77,10 @@
     function renderExpenseCategoryTable(expense_categories) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
-
         tableBody.innerHTML = '';
+
+        expense_categories.sort((a, b) => b.id - a.id);
+        let fakeId = 1;
         expense_categories.forEach(expense_category => {
             const row = document.createElement("tr");
             const addCell = (value) => {
@@ -85,7 +88,7 @@
                 td.textContent = value || 'N/A';
                 return td;
             };
-
+            row.appendChild(addCell(fakeId++));
             row.appendChild(addCell(expense_category.name));
             row.appendChild(addCell(expense_category.description));
             row.appendChild(addCell(expense_category.master_report));
