@@ -78,8 +78,12 @@
     </div>
 </div>
 <script>
+    // Wait until the DOM is fully loaded before executing the script
     document.addEventListener("DOMContentLoaded", async () => {
+        // Load available roles dynamically from the server
         await loadRoles();
+
+        // Set up event listeners and validation for the user creation form
         setupCreateUserForm();
     });
 
@@ -108,15 +112,24 @@
             roleSelect.innerHTML = '';
 
             // Add placeholder option
-            const placeholderOption = new Option('-- Select Role --', '');
-            placeholderOption.disabled = true;
-            placeholderOption.selected = true;
-            roleSelect.add(placeholderOption);
-            
+            roleSelect.add(new Option('-- Select Role --', '', true, false));
+            roleSelect.options[0].disabled = true;
+
             // Add role options
             roles.forEach(role => {
-                const option = new Option(role.name, role.id);
-                roleSelect.add(option);
+                roleSelect.add(new Option(role.name, role.id));
+            });
+
+            // The required attribute will handle validation
+            roleSelect.required = true;
+
+            roleSelect.addEventListener('change', function() {
+                // This forces the DOM to update the selected attribute
+                const options = this.options;
+                for (let i = 0; i < options.length; i++) {
+                    options[i].removeAttribute('selected');
+                }
+                options[this.selectedIndex].setAttribute('selected', '');
             });
 
         } catch (error) {
