@@ -36,29 +36,36 @@
     </div>
 </div>
 <script>
-    // Check if valid user data was received...
-    document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            const users = await fetchUsers();
-            if (users && users.length > 0) {
-                renderUserTable(users);
-            } else {
-                console.warn("No users found or failed to fetch.");
-                renderUserTable([]); // Render an empty table
-            }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            renderUserTable([]); // Render an empty table
-        }
-    });
-
-    // Configuration
+    // ========== CONFIGURATION (Runs first - Sets up constants) ==========
     const apiBaseUrl = 'http://127.0.0.1:8000/api';
     const maxTokenRefreshAttempts = 1;
 
-    // Main function to fetch users with silent refresh
+    // ========== CORE FUNCTIONS (Define before they're called) ==========
+    
+    // 1. Token Refresh Function
+    async function refreshToken() {
+        try {
+            const response = await fetch(`${apiBaseUrl}/token/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh: localStorage.getItem('refreshToken') })
+            });
+
+            if (!response.ok) throw new Error('Token refresh failed');
+            
+            const data = await response.json();
+            localStorage.setItem('accessToken', data.access);
+            return data.access;
+
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            window.location.href = '/login/';
+            return null;
+        }
+    }
+
+    // 2. Data Fetching Function
     async function fetchUsers(retryCount = 0) {
-        // Get current token
         let accessToken = localStorage.getItem('accessToken');
         
         try {
@@ -69,6 +76,14 @@
                     'Authorization': `Bearer ${accessToken}`
                 }
             });
+
+            if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+                const newToken = await refreshToken();
+                if (newToken) {
+                    return fetchUsers(retryCount + 1);
+                }
+                return null;
+            }
 
             if (!response.ok) {
                 throw new Error(`Request failed with status ${response.status}`);
@@ -82,31 +97,26 @@
         }
     }
 
+    // 3. Rendering Function
     function renderUserTable(users) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
 
-        // Clear existing rows (if any)
         tableBody.innerHTML = '';
-
-        // Sort by ID in descending order
         users.sort((a, b) => b.id - a.id);
         
-        // Start with 1
         let fakeId = 1;
 
-        // Create rows for each user
         users.forEach(user => {
             const row = document.createElement("tr");
 
-            // Helper to safely insert cell data
             const addCell = (value) => {
                 const td = document.createElement("td");
                 td.textContent = value || 'N/A';
                 return td;
             };
 
-            // Add cells in order of your table headers
+            // Add cells
             row.appendChild(addCell(fakeId++));
             row.appendChild(addCell(user.username));
             row.appendChild(addCell(user.email));
@@ -114,8 +124,6 @@
             row.appendChild(addCell(user.last_name));
             row.appendChild(addCell(user.spending_limit));
             row.appendChild(addCell(user.role?.name || user.role));
-            
-            // Format dates (optional)
             row.appendChild(addCell(formatDate(user.created_at)));
             row.appendChild(addCell(formatDate(user.updated_at)));
 
@@ -129,8 +137,26 @@
             tableBody.appendChild(row);
         });
 
-        // Initialize DataTable after adding rows
         initializeDataTable();
     }
+
+    // ========== EXECUTION FLOW (Runs when DOM is ready) ==========
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            // 1. First - Fetch users
+            const users = await fetchUsers();
+            
+            // 2. Then - Render results
+            if (users && users.length > 0) {
+                renderUserTable(users);
+            } else {
+                console.warn("No users found or failed to fetch.");
+                renderUserTable([]);
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderUserTable([]);
+        }
+    });
 </script>
 {% endblock %}

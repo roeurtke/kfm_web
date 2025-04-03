@@ -78,15 +78,11 @@
     </div>
 </div>
 <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-        await loadRoles();
-        setupCreateUserForm();
-    });
-    
+    // 1. Configuration Constants (run first - no dependencies)
     const apiBaseUrl = 'http://127.0.0.1:8000/api';
     const maxTokenRefreshAttempts = 1;
     
-    // Utility Functions
+    // 2. Utility Functions (early definition - used by other functions)
     const showAlert = (message, type) => {
         document.querySelector('.alert')?.remove();
         
@@ -105,7 +101,29 @@
         return { success: false, error: error.message };
     };
     
-    // Role Functions
+    // 3. Auth Functions (needed for API calls)
+    async function RefreshToken() {
+        try {
+            const response = await fetch(`${apiBaseUrl}/token/refresh/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh: localStorage.getItem('refreshToken') })
+            });
+    
+            if (!response.ok) throw new Error('Token refresh failed');
+            
+            const data = await response.json();
+            localStorage.setItem('accessToken', data.access);
+            return data.access;
+    
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            window.location.href = '/login/';
+            return null;
+        }
+    }
+    
+    // 4. Role Functions (needed before form setup)
     const populateRoleSelect = (roles, selectElement) => {
         selectElement.innerHTML = '';
         selectElement.add(new Option('-- Select Role --', '', true, false));
@@ -136,7 +154,7 @@
         }
     }
     
-    // User Functions
+    // 5. User Functions (needed for form submission)
     async function createUser(userData, retryCount = 0) {
         try {
             const payload = {
@@ -170,7 +188,7 @@
         }
     }
     
-    // Form Handling
+    // 6. Form Handling (depends on all previous functions)
     function setupCreateUserForm() {
         const createForm = document.getElementById('createUserForm');
         if (!createForm) return;
@@ -226,26 +244,10 @@
         });
     }
 
-    // Auth Functions
-    async function RefreshToken() {
-        try {
-            const response = await fetch(`${apiBaseUrl}/token/refresh/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh: localStorage.getItem('refreshToken') })
-            });
-    
-            if (!response.ok) throw new Error('Token refresh failed');
-            
-            const data = await response.json();
-            localStorage.setItem('accessToken', data.access);
-            return data.access;
-    
-        } catch (error) {
-            console.error('Token refresh error:', error);
-            window.location.href = '/login/';
-            return null;
-        }
-    }
+    // 7. Initialization (runs last after all functions are defined)
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadRoles();
+        setupCreateUserForm();
+    });
 </script>
 {% endblock %}
