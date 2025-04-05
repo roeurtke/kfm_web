@@ -78,11 +78,6 @@
     </div>
 </div>
 <script>
-    // 1. Configuration Constants (run first - no dependencies)
-    const apiBaseUrl = 'http://127.0.0.1:8000/api';
-    const maxTokenRefreshAttempts = 1;
-    
-    // 2. Utility Functions (early definition - used by other functions)
     const showAlert = (message, type) => {
         document.querySelector('.alert')?.remove();
         
@@ -101,94 +96,14 @@
         return { success: false, error: error.message };
     };
     
-    // 3. Auth Functions (needed for API calls)
-    async function RefreshToken() {
-        try {
-            const response = await fetch(`${apiBaseUrl}/token/refresh/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh: localStorage.getItem('refreshToken') })
-            });
-    
-            if (!response.ok) throw new Error('Token refresh failed');
-            
-            const data = await response.json();
-            localStorage.setItem('accessToken', data.access);
-            return data.access;
-    
-        } catch (error) {
-            console.error('Token refresh error:', error);
-            window.location.href = '/login/';
-            return null;
-        }
-    }
-    
-    // 4. Role Functions (needed before form setup)
     const populateRoleSelect = (roles, selectElement) => {
         selectElement.innerHTML = '';
         selectElement.add(new Option('-- Select Role --', '', true, false));
         selectElement.options[0].disabled = true;
         roles.forEach(role => selectElement.add(new Option(role.name, role.id)));
     };
-    
-    async function loadRoles() {
-        const roleSelect = document.getElementById('role');
-        try {
-            const response = await fetch(`${apiBaseUrl}/roles/`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-            });
-    
-            if (response.status === 401 && await RefreshToken()) 
-                return loadRoles();
-            
-            if (!response.ok) throw new Error('Failed to load roles');
-            
-            populateRoleSelect(await response.json(), roleSelect);
-            roleSelect.required = true;
-    
-        } catch (error) {
-            console.error('Error loading roles:', error);
-            showAlert('Failed to load roles. Using default options.', 'warning');
-            roleSelect.innerHTML = `
-                <option value="" disabled selected>-- Select Role --</option>`;
-        }
-    }
-    
-    // 5. User Functions (needed for form submission)
-    async function createUser(userData, retryCount = 0) {
-        try {
-            const payload = {
-                ...userData,
-                role: userData.role_id,
-                spending_limit: userData.spending_limit ? parseFloat(userData.spending_limit) : null
-            };
-    
-            const response = await fetch(`${apiBaseUrl}/users/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                },
-                body: JSON.stringify(payload)
-            });
-    
-            if (response.status === 401 && retryCount < maxTokenRefreshAttempts && await RefreshToken()) 
-                return createUser(userData, retryCount + 1);
-            
-            if (response.status === 400) {
-                const errorData = await response.json();
-                return { success: false, error: 'Validation failed', details: errorData, status: 400 };
-            }
-    
-            if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
-            return { success: true, data: await response.json() };
-    
-        } catch (error) {
-            return handleApiError(error, 'Create user');
-        }
-    }
-    
-    // 6. Form Handling (depends on all previous functions)
+
+    // Function to set up the form submission
     function setupCreateUserForm() {
         const createForm = document.getElementById('createUserForm');
         if (!createForm) return;
@@ -196,6 +111,7 @@
         createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // Get form data
             const formData = {
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
@@ -207,47 +123,105 @@
                 role_id: document.getElementById('role').value
             };
     
-            // Validation
-            if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword || !formData.role_id) 
-                return showAlert('Please fill in all required fields', 'danger');
-            if (formData.password !== formData.confirmPassword) 
-                return showAlert('Passwords do not match', 'danger');
+            // Validate form data
+            if (!validateFormData(formData)) return;
     
             const submitBtn = createForm.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
     
             try {
-                const result = await createUser({
-                    ...formData,
-                    spending_limit: formData.limitBalance
-                });
-                
+                const payload = {
+                    username: formData.username,
+                    email: formData.email,
+                    first_name: formData.first_name,
+                    last_name: formData.last_name,
+                    password: formData.password,
+                    role: formData.role_id,
+                    spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null
+                };
+                const result = await window.createData('/api/users/', payload);
+    
                 if (result.success) {
                     showAlert('User created successfully!', 'success');
                     createForm.reset();
                     document.getElementById('role').selectedIndex = 0;
                 } else {
-                    const errorMessage = result.details?.errors 
-                        ? Object.entries(result.details.errors)
-                            .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-                            .join('<br>')
-                        : result.details?.message || 'Failed to create user';
-                    showAlert(errorMessage, 'danger');
+                    handleApiError(result);
                 }
             } catch (error) {
-                showAlert('An unexpected error occurred', 'danger');
+                handleUnexpectedError(error);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create User';
             }
         });
+    
+        function validateFormData(formData) {
+            const requiredFields = ['username', 'email', 'password', 'confirmPassword', 'role_id'];
+            const missingFields = requiredFields.filter(field => !formData[field]);
+            
+            if (missingFields.length > 0) {
+                showAlert('Please fill in all required fields', 'danger');
+                return false;
+            }
+            
+            if (formData.password !== formData.confirmPassword) {
+                showAlert('Passwords do not match', 'danger');
+                return false;
+            }
+            
+            return true;
+        }
+    
+        function handleApiError(result) {
+            let errorMessage = 'Failed to create user';
+            
+            if (result.status === 400 && result.details?.errors) {
+                // Handle validation errors
+                errorMessage = Object.entries(result.details.errors)
+                    .map(([field, errors]) => {
+                        const errorText = Array.isArray(errors) ? errors.join(', ') : errors;
+                        return `<strong>${field}:</strong> ${errorText}`;
+                    })
+                    .join('<br>');
+            } else if (result.details?.message) {
+                errorMessage = result.details.message;
+            } else if (result.error) {
+                errorMessage = result.error;
+            }
+            
+            showAlert(errorMessage, 'danger');
+        }
+    
+        function handleUnexpectedError(error) {
+            console.error('Full error details:', error);
+            
+            let errorMessage = 'An unexpected error occurred';
+            
+            if (error.name === 'TypeError') {
+                errorMessage = 'Network error - please check your connection';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Could not connect to the server';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            showAlert(errorMessage, 'danger');
+        }
     }
 
-    // 7. Initialization (runs last after all functions are defined)
     document.addEventListener("DOMContentLoaded", async () => {
-        await loadRoles();
-        setupCreateUserForm();
+        try {
+            await window.loadData('/api/roles/', {
+                targetElement: document.getElementById('role'),
+                populateCallback: populateRoleSelect,
+                defaultOptions: '<option value="" disabled selected>-- Select Role --</option>'
+            });
+            setupCreateUserForm();
+        } catch (error) {
+            console.error('Initialization failed:', error);
+        }
     });
 </script>
 {% endblock %}

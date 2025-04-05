@@ -1,6 +1,7 @@
 const apiBaseUrl = window.API_BASE_URL || 'http://127.0.0.1:8000';  // Set from Django template
 const maxTokenRefreshAttempts = 1;
 
+// Refresh the access token
 window.RefreshToken = async function() {
     try {
         const refreshToken = localStorage.getItem('refreshToken');
@@ -27,7 +28,7 @@ window.RefreshToken = async function() {
     }
 };
 
-// Add the new global fetchData function
+// Fetch data from the API
 window.fetchData = async function(endpoint, retryCount = 0) {
     let accessToken = localStorage.getItem('accessToken');
     
@@ -58,5 +59,89 @@ window.fetchData = async function(endpoint, retryCount = 0) {
     } catch (error) {
         console.error('Fetch error:', error);
         return null;
+    }
+};
+
+// Load data into a select element
+window.loadData = async function(endpoint, config = {}) {
+    const {
+        targetElement = null,       // DOM select element to populate
+        populateCallback = null,     // Function to handle data rendering
+        defaultOptions = '<option value="" disabled selected>-- Select --</option>',
+        alertOnError = true,
+        required = true
+    } = config;
+
+    try {
+        const data = await window.fetchData(endpoint);
+        
+        if (populateCallback && targetElement) {
+            populateCallback(data, targetElement);
+            if (required) targetElement.required = true;
+        }
+        return data;
+
+    } catch (error) {
+        console.error(`Error loading ${endpoint}:`, error);
+        if (targetElement) {
+            targetElement.innerHTML = defaultOptions;
+        }
+        if (alertOnError) {
+            showAlert(`Failed to load ${endpoint.split('/')[1]}. Using default options.`, 'warning');
+        }
+        throw error;
+    }
+};
+
+// Create data in the API
+window.createData = async function(endpoint, data, retryCount = 0) {
+    try {
+        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        // Token refresh handling
+        if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+            const newToken = await window.RefreshToken();
+            if (newToken) {
+                localStorage.setItem('accessToken', newToken);
+                return window.createData(endpoint, data, retryCount + 1);
+            }
+            throw new Error('Token refresh failed');
+        }
+
+        // Special handling for validation errors
+        if (response.status === 400) {
+            const errorData = await response.json();
+            return { 
+                success: false, 
+                error: 'Validation failed', 
+                details: errorData, 
+                status: 400 
+            };
+        }
+
+        // General error handling
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        return { 
+            success: true, 
+            data: await response.json() 
+        };
+
+    } catch (error) {
+        console.error(`createData error (${endpoint}):`, error);
+        return {
+            success: false,
+            error: error.message,
+            details: null
+        };
     }
 };
