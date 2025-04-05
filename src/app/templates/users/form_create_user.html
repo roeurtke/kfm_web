@@ -78,144 +78,85 @@
     </div>
 </div>
 <script>
-    const showAlert = (message, type) => {
-        document.querySelector('.alert')?.remove();
-        
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.role = 'alert';
-        alertDiv.innerHTML = `${message}<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span></button>`;
-        
-        document.querySelector('.card-body')?.prepend(alertDiv);
-        setTimeout(() => alertDiv.remove(), 5000);
-    };
-    
-    const handleApiError = (error, context) => {
-        console.error(`${context} error:`, error);
-        return { success: false, error: error.message };
-    };
-    
-    const populateRoleSelect = (roles, selectElement) => {
-        selectElement.innerHTML = '';
-        selectElement.add(new Option('-- Select Role --', '', true, false));
-        selectElement.options[0].disabled = true;
-        roles.forEach(role => selectElement.add(new Option(role.name, role.id)));
-    };
-
-    // Function to set up the form submission
     function setupCreateUserForm() {
         const createForm = document.getElementById('createUserForm');
         if (!createForm) return;
+        createForm.addEventListener('submit', (e) => handleFormSubmit(e, createForm));
+    }
+
+    async function handleFormSubmit(e, formElement) { 
+        e.preventDefault();
+        
+        const formData = getFormData();
+        if (!window.validateForm(formData, ['username', 'email', 'password', 'confirmPassword', 'role_id'])) return;
     
-        createForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Get form data
-            const formData = {
-                username: document.getElementById('username').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                first_name: document.getElementById('firstName').value.trim(),
-                last_name: document.getElementById('lastName').value.trim(),
-                password: document.getElementById('password').value,
-                confirmPassword: document.getElementById('confirmPassword').value,
-                limitBalance: document.getElementById('limitBalance').value,
-                role_id: document.getElementById('role').value
-            };
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        setLoadingState(submitBtn, true);
     
-            // Validate form data
-            if (!validateFormData(formData)) return;
+        try {
+            const payload = createPayload(formData);
+            const result = await window.createData('/api/users/', payload);
     
-            const submitBtn = createForm.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
-    
-            try {
-                const payload = {
-                    username: formData.username,
-                    email: formData.email,
-                    first_name: formData.first_name,
-                    last_name: formData.last_name,
-                    password: formData.password,
-                    role: formData.role_id,
-                    spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null
-                };
-                const result = await window.createData('/api/users/', payload);
-    
-                if (result.success) {
-                    showAlert('User created successfully!', 'success');
-                    createForm.reset();
-                    document.getElementById('role').selectedIndex = 0;
-                } else {
-                    handleApiError(result);
-                }
-            } catch (error) {
-                handleUnexpectedError(error);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Create User';
+            if (result.success) {
+                handleSuccess(formElement);
+            } else {
+                window.handleApiError(result, 'Failed to create user');
             }
-        });
-    
-        function validateFormData(formData) {
-            const requiredFields = ['username', 'email', 'password', 'confirmPassword', 'role_id'];
-            const missingFields = requiredFields.filter(field => !formData[field]);
-            
-            if (missingFields.length > 0) {
-                showAlert('Please fill in all required fields', 'danger');
-                return false;
-            }
-            
-            if (formData.password !== formData.confirmPassword) {
-                showAlert('Passwords do not match', 'danger');
-                return false;
-            }
-            
-            return true;
-        }
-    
-        function handleApiError(result) {
-            let errorMessage = 'Failed to create user';
-            
-            if (result.status === 400 && result.details?.errors) {
-                // Handle validation errors
-                errorMessage = Object.entries(result.details.errors)
-                    .map(([field, errors]) => {
-                        const errorText = Array.isArray(errors) ? errors.join(', ') : errors;
-                        return `<strong>${field}:</strong> ${errorText}`;
-                    })
-                    .join('<br>');
-            } else if (result.details?.message) {
-                errorMessage = result.details.message;
-            } else if (result.error) {
-                errorMessage = result.error;
-            }
-            
-            showAlert(errorMessage, 'danger');
-        }
-    
-        function handleUnexpectedError(error) {
-            console.error('Full error details:', error);
-            
-            let errorMessage = 'An unexpected error occurred';
-            
-            if (error.name === 'TypeError') {
-                errorMessage = 'Network error - please check your connection';
-            } else if (error.message.includes('Failed to fetch')) {
-                errorMessage = 'Could not connect to the server';
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-            
-            showAlert(errorMessage, 'danger');
+        } catch (error) {
+            window.handleUnexpectedError(error, 'User creation');
+        } finally {
+            setLoadingState(submitBtn, false);
         }
     }
 
+    // Modified handleSuccess to use the parameter
+    function handleSuccess(form) {
+        form.reset();
+        document.getElementById('role').selectedIndex = 0;
+        window.showAlert('User created successfully!', 'success');
+    }
+
+    // Helper functions
+    function getFormData() {
+        return {
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
+            password: document.getElementById('password').value,
+            confirmPassword: document.getElementById('confirmPassword').value,
+            limitBalance: document.getElementById('limitBalance').value,
+            role_id: document.getElementById('role').value
+        };
+    }
+
+    function createPayload(formData) {
+        return {
+            username: formData.username,
+            email: formData.email,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            password: formData.password,
+            role: formData.role_id,
+            spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null
+        };
+    }
+
+    function setLoadingState(button, isLoading) {
+        button.disabled = isLoading;
+        button.innerHTML = isLoading 
+            ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...'
+            : 'Create User';
+    }
+
+    // Initialize
     document.addEventListener("DOMContentLoaded", async () => {
         try {
             await window.loadData('/api/roles/', {
                 targetElement: document.getElementById('role'),
-                populateCallback: populateRoleSelect,
+                populateCallback: (data, element) => {
+                    window.populateSelect(data, element, '-- Select Role --');
+                },
                 defaultOptions: '<option value="" disabled selected>-- Select Role --</option>'
             });
             setupCreateUserForm();

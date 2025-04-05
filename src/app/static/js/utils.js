@@ -35,3 +35,37 @@ window.populateSelect = (data, selectElement, placeholder = '-- Select --', valu
     selectElement.options[0].disabled = true;
     data.forEach(item => selectElement.add(new Option(item[textField], item[valueField])));
 };
+
+// Error Handling Utilities
+window.handleApiError = function(result, defaultMessage = 'Operation failed') {
+    let errorMessage = defaultMessage;
+    
+    if (result.status === 400 && result.details?.errors) {
+        errorMessage = Object.entries(result.details.errors)
+            .map(([field, errors]) => `<strong>${field}:</strong> ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+            .join('<br>');
+    } else if (result.details?.message) {
+        errorMessage = result.details.message;
+    } else if (result.error) {
+        errorMessage = result.error;
+    }
+    
+    window.showAlert(errorMessage, 'danger');
+    return errorMessage; // Optional: return for further processing
+};
+
+window.handleUnexpectedError = function(error, context = '', defaultMessage = 'An unexpected error occurred') {
+    console.error(`${context} error:`, error);
+    
+    let message = defaultMessage;
+    if (error instanceof TypeError) {
+        message = 'Network error - please check your connection';
+    } else if (error.message?.includes('Failed to fetch')) {
+        message = 'Could not connect to the server';
+    } else if (error.message) {
+        message = error.message;
+    }
+    
+    window.showAlert(message, 'danger');
+    return message; // Optional: return for logging
+};
