@@ -4,107 +4,116 @@
 {% block content %}
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">VIEW USER</h6>
+        <h6 class="m-0 font-weight-bold text-primary">USER DETAILS</h6>
     </div>
     <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" class="form-control" id="username" readonly>
+        <form id="viewUserForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" readonly>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" class="form-control" id="email" readonly>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" readonly>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" class="form-control" id="firstName" readonly>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="limitBalance">Limit Balance</label>
+                        <input type="number" class="form-control" id="limitBalance" name="limitBalance" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <input type="text" class="form-control" id="role" name="role" readonly>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" class="form-control" id="lastName" readonly>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="createdAt">Created At</label>
+                        <input type="text" class="form-control" id="createdAt" name="createdAt" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="updatedAt">Updated At</label>
+                        <input type="text" class="form-control" id="updatedAt" name="updatedAt" readonly>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Limit Balance</label>
-                    <input type="number" class="form-control" id="limitBalance" readonly>
-                </div>
+            
+            <div class="form-group mt-4">
+                <a href="{% url 'users' %}" class="btn btn-secondary">Back to List</a>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Role</label>
-                    <input type="text" class="form-control" id="role" readonly>
-                </div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Created At</label>
-                    <input type="text" class="form-control" id="createdAt" readonly>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Updated At</label>
-                    <input type="text" class="form-control" id="updatedAt" readonly>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group mt-4">
-            <a href="{% url 'users' %}" class="btn btn-secondary">Back to List</a>
-        </div>
+        </form>
     </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        // Get user ID from URL
-        const userId = window.location.pathname.split('/')[2];
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Extract user ID from URL
+        const pathParts = window.location.pathname.split('/');
+        const userId = pathParts[pathParts.length - 2];
         
-        // Fetch user data
-        const userData = await window.fetchData(`/api/users/${userId}/`);
-        
-        if (userData) {
-            // Populate form fields
-            document.getElementById('username').value = userData.username || '';
-            document.getElementById('email').value = userData.email || '';
-            document.getElementById('firstName').value = userData.first_name || '';
-            document.getElementById('lastName').value = userData.last_name || '';
-            document.getElementById('limitBalance').value = userData.spending_limit || '';
-            document.getElementById('role').value = userData.role?.name || userData.role || '';
-            document.getElementById('createdAt').value = formatDate(userData.created_at) || '';
-            document.getElementById('updatedAt').value = formatDate(userData.updated_at) || '';
-        } else {
-            window.showAlert('Failed to load user data', 'danger');
+        if (!userId || isNaN(userId)) {
+            window.showAlert('Invalid user ID', 'error');
+            return;
         }
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        window.showAlert('Error loading user data', 'danger');
-    }
-});
 
-// Use existing formatDate function from base template
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
-}
+        try {
+            const user = await window.fetchData(`/api/users/${userId}/`);
+            if (user) {
+                populateUserForm(user);
+            } else {
+                window.showAlert('User not found', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading user:', error);
+            window.showAlert('Failed to load user details', 'error');
+        }
+    });
+
+    function populateUserForm(user) {
+        document.getElementById('username').value = user.username || 'N/A';
+        document.getElementById('email').value = user.email || 'N/A';
+        document.getElementById('firstName').value = user.first_name || 'N/A';
+        document.getElementById('lastName').value = user.last_name || 'N/A';
+        document.getElementById('limitBalance').value = user.spending_limit || 'N/A';
+        document.getElementById('role').value = user.role?.name || user.role || 'N/A';
+        document.getElementById('createdAt').value = formatDate(user.created_at) || 'N/A';
+        document.getElementById('updatedAt').value = formatDate(user.updated_at) || 'N/A';
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
 </script>
 {% endblock %}
