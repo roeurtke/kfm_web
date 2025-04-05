@@ -6,7 +6,10 @@ window.RefreshToken = async function() {
     try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (!refreshToken) {
-            throw new Error('No refresh token found');
+            console.warn('No refresh token - redirecting to login');
+            clearAuthTokens();
+            redirectToLogin('no_refresh_token');
+            return null;
         }
 
         const response = await fetch(`${apiBaseUrl}/api/token/refresh/`, {
@@ -15,18 +18,40 @@ window.RefreshToken = async function() {
             body: JSON.stringify({ refresh: refreshToken })
         });
 
-        if (!response.ok) throw new Error('Token refresh failed');
-        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Refresh failed with status ${response.status}`);
+        }
+
         const data = await response.json();
-        localStorage.setItem('accessToken', data.access);  // Store new access token
+        localStorage.setItem('accessToken', data.access);
+        
+        // Store new refresh token if provided (rotation)
+        if (data.refresh) {
+            localStorage.setItem('refreshToken', data.refresh);
+        }
+        
         return data.access;
 
     } catch (error) {
-        console.error('Token refresh error:', error);
-        window.location.href = '/login/';  // Redirect to Django login page
+        console.error('Token refresh failed:', error);
+        clearAuthTokens();
+        redirectToLogin('token_refresh_failed');
         return null;
     }
 };
+
+// Helper functions
+function clearAuthTokens() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+}
+
+function redirectToLogin(reason) {
+    const params = new URLSearchParams();
+    params.set('auth_error', reason);
+    window.location.href = `/login/?${params.toString()}`;
+}
 
 // Fetch data from the API
 window.fetchData = async function(endpoint, retryCount = 0) {
