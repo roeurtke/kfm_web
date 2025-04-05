@@ -32,49 +32,6 @@
     </div>
 </div>
 <script>
-    // Check if valid user data was received...
-    document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            const roles = await fetchRoles();
-            if (roles && roles.length > 0) {
-                renderRoleTable(roles);
-            } else {
-                console.warn("No users found or failed to fetch.");
-                renderRoleTable([]);
-            }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            renderRoleTable([]);
-        }
-    });
-
-    const apiBaseUrl = 'http://127.0.0.1:8000/api';
-    const maxTokenRefreshAttempts = 1;
-
-    async function fetchRoles(retryCount = 0) {
-        let accessToken = localStorage.getItem('accessToken');
-        
-        try {
-            const response = await fetch(`${apiBaseUrl}/roles/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-
-            return await response.json();
-
-        } catch (error) {
-            console.error('Fetch error:', error);
-            return null;
-        }
-    }
-
     function renderRoleTable(roles) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
@@ -105,5 +62,20 @@
         });
         initializeDataTable();
     }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const roles = await window.fetchData('/api/roles/');
+            if (roles && roles.length > 0) {
+                renderRoleTable(roles);
+            } else {
+                console.warn("No roles found or failed to fetch.");
+                renderRoleTable([]);
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderRoleTable([]);
+        }
+    });
 </script>
 {% endblock %}

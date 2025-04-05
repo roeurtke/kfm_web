@@ -36,50 +36,6 @@
     </div>
 </div>
 <script>
-    // Check if valid expenses data was received...
-    document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            const expenses= await fetchExpenses();
-            if (expenses && expenses.length > 0) {
-                renderExpenseTable(expenses);
-            } else {
-                console.warn("No expenses found or failed to fetch.");
-                renderExpenseTable([]);
-            }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            renderExpenseTable([]);
-        }
-    });
-
-    // Configuration
-    const apiBaseUrl = 'http://127.0.0.1:8000/api';
-    const maxTokenRefreshAttempts = 1;
-
-    async function fetchExpenses(retryCount = 0) {
-        let accessToken = localStorage.getItem('accessToken');
-        
-        try {
-            const response = await fetch(`${apiBaseUrl}/expenses/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-
-            return await response.json();
-
-        } catch (error) {
-            console.error('Fetch error:', error);
-            return null;
-        }
-    }
-
     function renderExpenseTable(expenses) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
@@ -115,5 +71,20 @@
         });
         initializeDataTable();
     }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const expenses = await window.fetchData('/api/expenses/');
+            if (expenses && expenses.length > 0) {
+                renderExpenseTable(expenses);
+            } else {
+                console.warn("No expenses found or failed to fetch.");
+                renderExpenseTable([]);
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderExpenseTable([]);
+        }
+    });
 </script>
 {% endblock %}

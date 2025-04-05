@@ -36,50 +36,6 @@
     </div>
 </div>
 <script>
-    // Check if valid income data was received...
-    document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            const incomes= await fetchIncomes();
-            if (incomes && incomes.length > 0) {
-                renderIncomeTable(incomes);
-            } else {
-                console.warn("No incomes found or failed to fetch.");
-                renderIncomeTable([]); // Render an empty table
-            }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            renderIncomeTable([]); // Render an empty table
-        }
-    });
-
-    // Configuration
-    const apiBaseUrl = 'http://127.0.0.1:8000/api';
-    const maxTokenRefreshAttempts = 1;
-
-    async function fetchIncomes(retryCount = 0) {
-        let accessToken = localStorage.getItem('accessToken');
-        
-        try {
-            const response = await fetch(`${apiBaseUrl}/incomes/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-
-            return await response.json();
-
-        } catch (error) {
-            console.error('Fetch error:', error);
-            return null;
-        }
-    }
-
     function renderIncomeTable(incomes) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
@@ -115,5 +71,20 @@
         });
         initializeDataTable();
     }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const incomes = await window.fetchData('/api/incomes/');
+            if (incomes && incomes.length > 0) {
+                renderIncomeTable(incomes);
+            } else {
+                console.warn("No incomes found or failed to fetch.");
+                renderIncomeTable([]);
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderIncomeTable([]);
+        }
+    });
 </script>
 {% endblock %}

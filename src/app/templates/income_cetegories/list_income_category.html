@@ -33,50 +33,6 @@
     </div>
 </div>
 <script>
-    // Check if valid income-categories data was received...
-    document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            const income_categories= await fetchIncomeCategories();
-            if (income_categories && income_categories.length > 0) {
-                renderIncomeCategoryTable(income_categories);
-            } else {
-                console.warn("No income-categories found or failed to fetch.");
-                renderIncomeCategoryTable([]);
-            }
-        } catch (error) {
-            console.error("Initialization error:", error);
-            renderIncomeCategoryTable([]);
-        }
-    });
-
-    // Configuration
-    const apiBaseUrl = 'http://127.0.0.1:8000/api';
-    const maxTokenRefreshAttempts = 1;
-
-    async function fetchIncomeCategories(retryCount = 0) {
-        let accessToken = localStorage.getItem('accessToken');
-        
-        try {
-            const response = await fetch(`${apiBaseUrl}/income-categories/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-
-            return await response.json();
-
-        } catch (error) {
-            console.error('Fetch error:', error);
-            return null;
-        }
-    }
-
     function renderIncomeCategoryTable(income_categories) {
         const tableBody = document.querySelector("#dataTable tbody");
         if (!tableBody) return;
@@ -109,5 +65,20 @@
         });
         initializeDataTable();
     }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const income_categories = await window.fetchData('/api/income-categories/');
+            if (income_categories && income_categories.length > 0) {
+                renderIncomeCategoryTable(income_categories);
+            } else {
+                console.warn("No income-categories found or failed to fetch.");
+                renderIncomeCategoryTable([]);
+            }
+        } catch (error) {
+            console.error("Initialization error:", error);
+            renderIncomeCategoryTable([]);
+        }
+    });
 </script>
 {% endblock %}
