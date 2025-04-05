@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">VIEW USER</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" class="form-control" id="username" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" id="email" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" class="form-control" id="firstName" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" class="form-control" id="lastName" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Limit Balance</label>
+                    <input type="number" class="form-control" id="limitBalance" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Role</label>
+                    <input type="text" class="form-control" id="role" readonly>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Created At</label>
+                    <input type="text" class="form-control" id="createdAt" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Updated At</label>
+                    <input type="text" class="form-control" id="updatedAt" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <a href="{% url 'users' %}" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        // Get user ID from URL
+        const userId = window.location.pathname.split('/')[2];
+        
+        // Fetch user data
+        const userData = await window.fetchData(`/api/users/${userId}/`);
+        
+        if (userData) {
+            // Populate form fields
+            document.getElementById('username').value = userData.username || '';
+            document.getElementById('email').value = userData.email || '';
+            document.getElementById('firstName').value = userData.first_name || '';
+            document.getElementById('lastName').value = userData.last_name || '';
+            document.getElementById('limitBalance').value = userData.spending_limit || '';
+            document.getElementById('role').value = userData.role?.name || userData.role || '';
+            document.getElementById('createdAt').value = formatDate(userData.created_at) || '';
+            document.getElementById('updatedAt').value = formatDate(userData.updated_at) || '';
+        } else {
+            window.showAlert('Failed to load user data', 'danger');
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        window.showAlert('Error loading user data', 'danger');
+    }
+});
+
+// Use existing formatDate function from base template
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
+}
+</script>
+{% endblock %}

@@ -17,6 +17,7 @@ urlpatterns = [
     # Settings management
     path('users/', views.user, name='users'),
     path('create_user/', views.create_user, name='create_user'),
+    path('users/<int:user_id>/', views.view_user, name='view_user'),
     path('roles/', views.role, name='roles'),
     path('permissions/', views.permission, name='permissions'),
 ]
