@@ -56,6 +56,9 @@ def create_user(request):
 def view_user(request, user_id):
     return render(request, 'users/form_view_user.html', {'user_id': user_id})
 
+def edit_user(request, user_id):
+    return render(request, 'users/form_edit_user.html', {'user_id': user_id})
+
 def role(request):
     context = {
         'show_collapse_setting': should_show_collapse(request),

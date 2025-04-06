@@ -170,3 +170,53 @@ window.createData = async function(endpoint, data, retryCount = 0) {
         };
     }
 };
+
+// Update data in the API
+window.updateData = async function(endpoint, data, retryCount = 0) {
+    try {
+        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
+            const newToken = await window.RefreshToken();
+            if (newToken) {
+                localStorage.setItem('accessToken', newToken);
+                return window.updateData(endpoint, data, retryCount + 1);
+            }
+            throw new Error('Token refresh failed');
+        }
+
+        if (response.status === 400) {
+            const errorData = await response.json();
+            return { 
+                success: false, 
+                error: 'Validation failed', 
+                details: errorData, 
+                status: 400 
+            };
+        }
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        return { 
+            success: true, 
+            data: await response.json() 
+        };
+
+    } catch (error) {
+        console.error(`updateData error (${endpoint}):`, error);
+        return {
+            success: false,
+            error: error.message,
+            details: null
+        };
+    }
+};
