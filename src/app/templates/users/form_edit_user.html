@@ -137,15 +137,26 @@
                 window.fetchData(`/api/users/${userId}/`)
             ]);
 
+            console.log('User Data:', userData);
+            console.log('Roles Data:', rolesData);
+
             // Populate roles dropdown with the current user's role selected
             if (rolesData && userData) {
-                window.populateSelect(rolesData, roleSelect, '-- Select Role --', userData.role?.id || userData.role);
+                // Extract the role name or find the matching ID
+                const userRole = userData.role && typeof userData.role === 'object' 
+                    ? userData.role.name 
+                    : userData.role;
+                const selectedRoleValue = rolesData.find(role => role.name === userRole)?.id || userRole;
+                console.log('Selected Role Value:', selectedRoleValue);
+                window.populateSelect(rolesData, roleSelect, '-- Select Role --', selectedRoleValue);
                 
                 document.getElementById('username').value = userData.username || '';
                 document.getElementById('email').value = userData.email || '';
                 document.getElementById('firstName').value = userData.first_name || '';
                 document.getElementById('lastName').value = userData.last_name || '';
                 document.getElementById('limitBalance').value = userData.spending_limit || '';
+            } else {
+                console.error('Failed to load data:', { rolesData, userData });
             }
 
             setupEditUserForm();

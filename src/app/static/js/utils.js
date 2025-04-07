@@ -31,23 +31,37 @@ window.validateForm = (formData, requiredFields) => {
 // Select population utility
 window.populateSelect = function(data, element, defaultText, selectedValue = '') {
     element.innerHTML = '';
-    
+
+    console.log('Selected Value:', selectedValue, 'Type:', typeof selectedValue);
+    console.log('Data:', data);
+
     if (defaultText) {
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = defaultText;
         defaultOption.disabled = true;
-        defaultOption.selected = !selectedValue;
+        defaultOption.selected = selectedValue === '' || selectedValue === undefined || selectedValue === null;
         element.appendChild(defaultOption);
     }
-    
-    data.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.id;
-        option.textContent = item.name || item.title || item.id;
-        option.selected = (item.id == selectedValue);
-        element.appendChild(option);
-    });
+
+    if (Array.isArray(data)) {
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.name || item.title || item.id || 'Unnamed';
+            // Match by ID or name, ensuring type consistency
+            const isSelected = String(item.id) === String(selectedValue) || item.name === String(selectedValue);
+            option.selected = isSelected;
+            element.appendChild(option);
+            console.log(`Option: value=${option.value}, text=${option.textContent}, selected=${isSelected}`);
+        });
+    }
+
+    if (element.selectedIndex === -1 && selectedValue && selectedValue !== '') {
+        console.warn(`No option matched selectedValue: "${selectedValue}"`);
+    } else {
+        console.log('Selected Index:', element.selectedIndex, 'Selected Value:', element.value);
+    }
 };
 
 // Error Handling Utilities
