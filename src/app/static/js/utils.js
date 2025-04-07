@@ -29,27 +29,17 @@ window.validateForm = (formData, requiredFields) => {
 };
 
 // Select population utility
-window.populateSelect = function(data, element, defaultText, selectedValue = '') {
-    element.innerHTML = '';
-
-    if (defaultText) {
-        element.add(new Option(defaultText, '', false, false)); // Not selected by default
-        element.options[0].disabled = true;
-    }
-
-    if (Array.isArray(data)) {
-        data.forEach(item => {
-            const text = item.name || item.title || item.id || 'Unnamed';
-            const isSelected = String(item.id) === String(selectedValue);
-            const option = new Option(text, item.id, isSelected, isSelected);
-            element.add(option);
-        });
-    }
-
-    if (element.selectedIndex === -1 && selectedValue) {
-        console.warn(`No option matched selectedValue: "${selectedValue}"`);
-        element.value = String(selectedValue); // Fallback to force selection
-    }
+window.populateSelect = function(data, selectElement, defaultText, selectedValue) {
+    selectElement.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
+    data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name;
+        if (item.id == selectedValue) {
+            option.selected = true;
+        }
+        selectElement.appendChild(option);
+    });
 };
 
 // Error Handling Utilities

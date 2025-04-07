@@ -156,6 +156,17 @@
                 targetElement: document.getElementById('role'),
                 populateCallback: (data, element) => {
                     window.populateSelect(data, element, '-- Select Role --');
+                    element.addEventListener('change', () => {
+                        // Clear existing selected attributes
+                        Array.from(element.options).forEach(option => {
+                            option.removeAttribute('selected');
+                        });
+                        
+                        // Set selected attribute on the chosen option
+                        if (element.selectedIndex > 0) { // Skip the default option
+                            element.options[element.selectedIndex].setAttribute('selected', '');
+                        }
+                    });
                 },
                 defaultOptions: '<option value="" disabled selected>-- Select Role --</option>'
             });
