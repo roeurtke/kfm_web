@@ -74,7 +74,6 @@
                 window.location.href = `/users/${user.id}/`;
             };
             actionCell.appendChild(viewLink);
-            // actionCell.appendChild(createActionLink(`/users/${user.id}/edit/`, "Edit", "btn-warning"));
             const editLink = createActionLink(`/users/${user.id}/edit/`, "Edit", "btn-warning");
             editLink.onclick = (e) => {
                 e.preventDefault();

@@ -64,97 +64,97 @@
 </div>
 
 <script>
-function setupEditUserForm() {
-    const editForm = document.getElementById('editUserForm');
-    if (!editForm) return;
-    editForm.addEventListener('submit', (e) => handleFormSubmit(e, editForm));
-}
-
-async function handleFormSubmit(e, formElement) {
-    e.preventDefault();
-    
-    const formData = getFormData();
-    if (!window.validateForm(formData, ['username', 'email', 'role_id'])) return;
-
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    setLoadingState(submitBtn, true);
-
-    try {
-        const userId = window.location.pathname.split('/')[2];
-        const payload = createPayload(formData);
-        const result = await window.updateData(`/api/users/${userId}/`, payload);
-
-        if (result.success) {
-            window.showAlert('User updated successfully!', 'success');
-            window.location.href = '{% url 'users' %}';
-        } else {
-            window.handleApiError(result, 'Failed to update user');
-        }
-    } catch (error) {
-        window.handleUnexpectedError(error, 'User update');
-    } finally {
-        setLoadingState(submitBtn, false);
+    function setupEditUserForm() {
+        const editForm = document.getElementById('editUserForm');
+        if (!editForm) return;
+        editForm.addEventListener('submit', (e) => handleFormSubmit(e, editForm));
     }
-}
 
-function getFormData() {
-    return {
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        first_name: document.getElementById('firstName').value.trim(),
-        last_name: document.getElementById('lastName').value.trim(),
-        limitBalance: document.getElementById('limitBalance').value,
-        role_id: document.getElementById('role').value
-    };
-}
-
-function createPayload(formData) {
-    return {
-        username: formData.username,
-        email: formData.email,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null,
-        role: formData.role_id
-    };
-}
-
-function setLoadingState(button, isLoading) {
-    button.disabled = isLoading;
-    button.innerHTML = isLoading 
-        ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...'
-        : 'Update User';
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        const userId = window.location.pathname.split('/')[2];
+    async function handleFormSubmit(e, formElement) {
+        e.preventDefault();
         
-        // Load roles
-        await window.loadData('/api/roles/', {
-            targetElement: document.getElementById('role'),
-            populateCallback: (data, element) => {
-                window.populateSelect(data, element, '-- Select Role --');
-            },
-            defaultOptions: '<option value="" disabled>-- Select Role --</option>'
-        });
+        const formData = getFormData();
+        if (!window.validateForm(formData, ['username', 'email', 'role_id'])) return;
 
-        // Load user data
-        const userData = await window.fetchData(`/api/users/${userId}/`);
-        if (userData) {
-            document.getElementById('username').value = userData.username || '';
-            document.getElementById('email').value = userData.email || '';
-            document.getElementById('firstName').value = userData.first_name || '';
-            document.getElementById('lastName').value = userData.last_name || '';
-            document.getElementById('limitBalance').value = userData.spending_limit || '';
-            document.getElementById('role').value = userData.role?.id || userData.role || '';
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        setLoadingState(submitBtn, true);
+
+        try {
+            const userId = window.location.pathname.split('/')[2];
+            const payload = createPayload(formData);
+            const result = await window.updateData(`/api/users/${userId}/`, payload);
+
+            if (result.success) {
+                window.showAlert('User updated successfully!', 'success');
+                window.location.href = '/users/';
+            } else {
+                window.handleApiError(result, 'Failed to update user');
+            }
+        } catch (error) {
+            window.handleUnexpectedError(error, 'User update');
+        } finally {
+            setLoadingState(submitBtn, false);
         }
-
-        setupEditUserForm();
-    } catch (error) {
-        console.error('Initialization failed:', error);
-        window.showAlert('Failed to load user data', 'danger');
     }
-});
+
+    function getFormData() {
+        return {
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
+            limitBalance: document.getElementById('limitBalance').value,
+            role_id: document.getElementById('role').value
+        };
+    }
+
+    function createPayload(formData) {
+        return {
+            username: formData.username,
+            email: formData.email,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            spending_limit: formData.limitBalance ? parseFloat(formData.limitBalance) : null,
+            role: formData.role_id
+        };
+    }
+
+    function setLoadingState(button, isLoading) {
+        button.disabled = isLoading;
+        button.innerHTML = isLoading 
+            ? '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...'
+            : 'Update User';
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const userId = window.location.pathname.split('/')[2];
+            
+            // Load roles
+            await window.loadData('/api/roles/', {
+                targetElement: document.getElementById('role'),
+                populateCallback: (data, element) => {
+                    window.populateSelect(data, element, '-- Select Role --');
+                },
+                defaultOptions: '<option value="" disabled>-- Select Role --</option>'
+            });
+
+            // Load user data
+            const userData = await window.fetchData(`/api/users/${userId}/`);
+            if (userData) {
+                document.getElementById('username').value = userData.username || '';
+                document.getElementById('email').value = userData.email || '';
+                document.getElementById('firstName').value = userData.first_name || '';
+                document.getElementById('lastName').value = userData.last_name || '';
+                document.getElementById('limitBalance').value = userData.spending_limit || '';
+                document.getElementById('role').value = userData.role?.id || userData.role || '';
+            }
+
+            setupEditUserForm();
+        } catch (error) {
+            console.error('Initialization failed:', error);
+            window.showAlert('Failed to load user data', 'danger');
+        }
+    });
 </script>
 {% endblock %}
