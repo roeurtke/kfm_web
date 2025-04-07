@@ -75,3 +75,31 @@ window.handleUnexpectedError = function(error, context = '', defaultMessage = 'A
     window.showAlert(message, 'danger');
     return message; // Optional: return for logging
 };
+
+// Handle deletion of any data (generic)
+window.handleDeleteData = async function(id, row, endpoint, entityName = 'item') {
+    const name = row.cells[1]?.textContent || 'this item';
+
+    if (!confirm(`Are you sure you want to delete ${entityName} "${name}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    const deleteBtn = row.querySelector('.btn-danger');
+
+    try {
+        const result = await window.deleteData(endpoint);
+        if (result.success) {
+            window.showAlert(`${entityName} "${name}" deleted successfully!`, 'success');
+            row.remove();
+            window.reinitializeDataTable();
+        } else {
+            window.showAlert(`Failed to delete ${entityName}: ${result.error}`, 'danger');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        window.showAlert(`An unexpected error occurred during ${entityName} deletion`, 'danger');
+    } finally {
+        deleteBtn.disabled = false;
+    }
+    deleteBtn.disabled = true;
+};

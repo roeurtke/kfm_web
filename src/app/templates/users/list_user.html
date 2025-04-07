@@ -80,7 +80,12 @@
                 window.location.href = `/users/${user.id}/edit/`;
             };
             actionCell.appendChild(editLink);
-            actionCell.appendChild(createActionLink(`/users/${user.id}/delete/`, "Delete", "btn-danger", true));
+            const deleteLink = createActionLink(`/users/${user.id}/delete/`, "Delete", "btn-danger", true);
+            deleteLink.onclick = (e) => {
+                e.preventDefault();
+                window.handleDeleteData(user.id, row, `/api/users/${user.id}/`, 'User');
+            };
+            actionCell.appendChild(deleteLink);
             
             row.appendChild(actionCell);
             tableBody.appendChild(row);
