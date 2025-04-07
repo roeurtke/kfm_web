@@ -31,23 +31,24 @@ window.validateForm = (formData, requiredFields) => {
 // Select population utility
 window.populateSelect = function(data, element, defaultText, selectedValue = '') {
     element.innerHTML = '';
-    
+
     if (defaultText) {
-        element.add(new Option(defaultText, '', true, false));
+        element.add(new Option(defaultText, '', false, false)); // Not selected by default
         element.options[0].disabled = true;
     }
 
     if (Array.isArray(data)) {
         data.forEach(item => {
             const text = item.name || item.title || item.id || 'Unnamed';
-            const option = new Option(text, item.id);
-            option.selected = String(item.id) === String(selectedValue) || item.name === String(selectedValue);
+            const isSelected = String(item.id) === String(selectedValue);
+            const option = new Option(text, item.id, isSelected, isSelected);
             element.add(option);
         });
     }
 
     if (element.selectedIndex === -1 && selectedValue) {
         console.warn(`No option matched selectedValue: "${selectedValue}"`);
+        element.value = String(selectedValue); // Fallback to force selection
     }
 };
 

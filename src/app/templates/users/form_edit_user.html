@@ -133,28 +133,47 @@
                 window.fetchData('/api/roles/'),
                 window.fetchData(`/api/users/${userId}/`)
             ]);
-    
+
             if (!roles || !user) throw new Error('Failed to load data');
-    
-            // Set form values
+
+            console.log('User:', user);
+            console.log('Roles:', roles);
+
             const fields = {
                 username: user.username,
                 email: user.email,
                 firstName: user.first_name,
                 lastName: user.last_name,
-                limitBalance: user.spending_limit  // Special mapping for spending_limit
+                limitBalance: user.spending_limit
             };
-    
+
             Object.entries(fields).forEach(([id, value]) => {
                 document.getElementById(id).value = value || '';
             });
-    
-            // Handle role selection
+
             const roleSelect = document.getElementById('role');
             const userRole = user.role?.name || user.role;
             const selectedRole = roles.find(r => r.name === userRole)?.id || userRole;
+            console.log('userRole:', userRole);
+            console.log('selectedRole:', selectedRole);
+
             window.populateSelect(roles, roleSelect, '-- Select Role --', selectedRole);
-    
+            console.log('Select HTML:', roleSelect.outerHTML);
+
+            // Add change event listener to sync selected attribute
+            roleSelect.addEventListener('change', () => {
+                // Remove 'selected' from all options
+                Array.from(roleSelect.options).forEach(option => {
+                    option.removeAttribute('selected'); // Clear existing selected attributes
+                });
+                // Set 'selected' on the currently selected option
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                if (selectedOption && selectedOption.value !== '') { // Exclude the disabled default
+                    selectedOption.setAttribute('selected', '');
+                }
+                console.log('Updated Select HTML:', roleSelect.outerHTML);
+            });
+
             setupEditUserForm();
         } catch (error) {
             console.error('Initialization failed:', error);
