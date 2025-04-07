@@ -1,7 +1,7 @@
 const apiBaseUrl = window.API_BASE_URL || 'http://127.0.0.1:8000';  // Set from Django template
 const maxTokenRefreshAttempts = 1;
 
-// Refresh the access token
+// =================== Refresh the access token ===================
 window.RefreshToken = async function() {
     try {
         const refreshToken = localStorage.getItem('refreshToken');
@@ -41,7 +41,6 @@ window.RefreshToken = async function() {
     }
 };
 
-// Helper functions
 function clearAuthTokens() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -53,7 +52,7 @@ function redirectToLogin(reason) {
     window.location.href = `/login/?${params.toString()}`;
 }
 
-// Fetch data from the API
+// =================== Fetch data from the API ===================
 window.fetchData = async function(endpoint, retryCount = 0) {
     let accessToken = localStorage.getItem('accessToken');
     
@@ -87,7 +86,7 @@ window.fetchData = async function(endpoint, retryCount = 0) {
     }
 };
 
-// Load data into a select element
+// =================== Load data into a select element ===================
 window.loadData = async function(endpoint, config = {}) {
     const {
         targetElement = null,       // DOM select element to populate
@@ -118,7 +117,7 @@ window.loadData = async function(endpoint, config = {}) {
     }
 };
 
-// Create data in the API
+// =================== Update data in the API ==================
 window.createData = async function(endpoint, data, retryCount = 0) {
     try {
         const response = await fetch(`${apiBaseUrl}${endpoint}`, {
@@ -171,7 +170,7 @@ window.createData = async function(endpoint, data, retryCount = 0) {
     }
 };
 
-// Update data in the API
+// =================== Update data in the API ==================
 window.updateData = async function(endpoint, data, retryCount = 0) {
     try {
         const response = await fetch(`${apiBaseUrl}${endpoint}`, {
@@ -218,5 +217,68 @@ window.updateData = async function(endpoint, data, retryCount = 0) {
             error: error.message,
             details: null
         };
+    }
+};
+
+// ================== Backend Health Check ==================
+window.checkBackend = async function() {
+    const backendUrl = "https://jsonplaceholder.typicode.com/posts/1";
+    const timeoutDuration = 3000;
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
+        const response = await fetch(backendUrl, {
+            signal: controller.signal,
+            headers: {'Content-Type': 'application/json'},
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Backend error: ${response.status} ${response.statusText}`);
+        }
+
+        console.log("Backend is healthy");
+    } catch (error) {
+        console.error("Backend is down:", error.message);
+        if (window.location.pathname !== "/login/") {
+            redirectToLogin('backend_down');
+        }
+    }
+};
+
+// ================== Logout Function ==================
+window.logoutUser = async function() {
+    const token = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    if (!token || !refreshToken) {
+        clearAuthTokens();
+        redirectToLogin('no_tokens');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${apiBaseUrl}/api/logout/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ refresh: refreshToken })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Logout failed with status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Logout error:", error);
+    } finally {
+        clearAuthTokens();
+        redirectToLogin('user_logged_out');
     }
 };
