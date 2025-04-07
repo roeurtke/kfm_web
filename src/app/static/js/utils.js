@@ -29,11 +29,25 @@ window.validateForm = (formData, requiredFields) => {
 };
 
 // Select population utility
-window.populateSelect = (data, selectElement, placeholder = '-- Select --', valueField = 'id', textField = 'name') => {
-    selectElement.innerHTML = '';
-    selectElement.add(new Option(placeholder, '', true, false));
-    selectElement.options[0].disabled = true;
-    data.forEach(item => selectElement.add(new Option(item[textField], item[valueField])));
+window.populateSelect = function(data, element, defaultText, selectedValue = '') {
+    element.innerHTML = '';
+    
+    if (defaultText) {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = defaultText;
+        defaultOption.disabled = true;
+        defaultOption.selected = !selectedValue;
+        element.appendChild(defaultOption);
+    }
+    
+    data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name || item.title || item.id;
+        option.selected = (item.id == selectedValue);
+        element.appendChild(option);
+    });
 };
 
 // Error Handling Utilities
