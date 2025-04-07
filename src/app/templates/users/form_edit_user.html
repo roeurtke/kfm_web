@@ -129,36 +129,32 @@
     document.addEventListener("DOMContentLoaded", async () => {
         try {
             const userId = window.location.pathname.split('/')[2];
-            const roleSelect = document.getElementById('role');
-            
-            // Load both user data and roles in parallel
-            const [rolesData, userData] = await Promise.all([
+            const [roles, user] = await Promise.all([
                 window.fetchData('/api/roles/'),
                 window.fetchData(`/api/users/${userId}/`)
             ]);
-
-            console.log('User Data:', userData);
-            console.log('Roles Data:', rolesData);
-
-            // Populate roles dropdown with the current user's role selected
-            if (rolesData && userData) {
-                // Extract the role name or find the matching ID
-                const userRole = userData.role && typeof userData.role === 'object' 
-                    ? userData.role.name 
-                    : userData.role;
-                const selectedRoleValue = rolesData.find(role => role.name === userRole)?.id || userRole;
-                console.log('Selected Role Value:', selectedRoleValue);
-                window.populateSelect(rolesData, roleSelect, '-- Select Role --', selectedRoleValue);
-                
-                document.getElementById('username').value = userData.username || '';
-                document.getElementById('email').value = userData.email || '';
-                document.getElementById('firstName').value = userData.first_name || '';
-                document.getElementById('lastName').value = userData.last_name || '';
-                document.getElementById('limitBalance').value = userData.spending_limit || '';
-            } else {
-                console.error('Failed to load data:', { rolesData, userData });
-            }
-
+    
+            if (!roles || !user) throw new Error('Failed to load data');
+    
+            // Set form values
+            const fields = {
+                username: user.username,
+                email: user.email,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                limitBalance: user.spending_limit  // Special mapping for spending_limit
+            };
+    
+            Object.entries(fields).forEach(([id, value]) => {
+                document.getElementById(id).value = value || '';
+            });
+    
+            // Handle role selection
+            const roleSelect = document.getElementById('role');
+            const userRole = user.role?.name || user.role;
+            const selectedRole = roles.find(r => r.name === userRole)?.id || userRole;
+            window.populateSelect(roles, roleSelect, '-- Select Role --', selectedRole);
+    
             setupEditUserForm();
         } catch (error) {
             console.error('Initialization failed:', error);
