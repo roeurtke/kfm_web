@@ -220,3 +220,41 @@ window.updateData = async function(endpoint, data, retryCount = 0) {
         };
     }
 };
+
+// Delete data from the API
+window.deleteData = async function(id, rowElement, endpoint, modelName) {
+    if (!confirm(`Are you sure you want to delete this ${modelName}?`)) {
+        return;
+    }
+
+    try {
+        const result = await fetch(`${apiBaseUrl}${endpoint}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            credentials: 'include'
+        });
+
+        if (!result.ok) {
+            throw new Error(`Delete failed with status ${result.status}`);
+        }
+
+        // Remove the row from table
+        if (rowElement && rowElement.parentNode) {
+            rowElement.parentNode.removeChild(rowElement);
+        }
+
+        // Show success message
+        if (window.showAlert) {
+            window.showAlert(`${modelName} deleted successfully!`, 'success');
+        }
+
+    } catch (error) {
+        console.error(`Error deleting ${modelName}:`, error);
+        if (window.showAlert) {
+            window.showAlert(`Failed to delete ${modelName}: ${error.message}`, 'error');
+        }
+    }
+};
