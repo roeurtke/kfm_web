@@ -223,11 +223,33 @@ window.updateData = async function(endpoint, data, retryCount = 0) {
 
 // Delete data from the API
 window.deleteData = async function(id, rowElement, endpoint, modelName) {
-    if (!confirm(`Are you sure you want to delete this ${modelName}?`)) {
-        return;
-    }
+    // Show confirmation popup
+    const { isConfirmed } = await Swal.fire({
+        title: `Delete ${modelName}?`,
+        text: `You won't be able to revert this!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        customClass: {
+            popup: 'animated bounceIn' // Add animation
+        }
+    });
+
+    if (!isConfirmed) return;
 
     try {
+        // Show loading popup
+        Swal.fire({
+            title: 'Deleting...',
+            html: 'Please wait while we delete the record',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         const result = await fetch(`${apiBaseUrl}${endpoint}`, {
             method: 'DELETE',
             headers: {
@@ -241,20 +263,33 @@ window.deleteData = async function(id, rowElement, endpoint, modelName) {
             throw new Error(`Delete failed with status ${result.status}`);
         }
 
+        // Close loading popup
+        Swal.close();
+
         // Remove the row from table
-        if (rowElement && rowElement.parentNode) {
-            rowElement.parentNode.removeChild(rowElement);
+        if (rowElement?.parentNode) {
+            rowElement.remove();
         }
 
-        // Show success message
-        if (window.showAlert) {
-            window.showAlert(`${modelName} deleted successfully!`, 'success');
-        }
+        // Show success popup
+        await Swal.fire({
+            title: 'Deleted!',
+            text: `${modelName} has been deleted.`,
+            icon: 'success',
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true
+        });
 
     } catch (error) {
         console.error(`Error deleting ${modelName}:`, error);
-        if (window.showAlert) {
-            window.showAlert(`Failed to delete ${modelName}: ${error.message}`, 'error');
-        }
+        
+        // Show error popup
+        await Swal.fire({
+            title: 'Error!',
+            text: `Failed to delete ${modelName}: ${error.message}`,
+            icon: 'error',
+            confirmButtonColor: '#3085d6'
+        });
     }
 };
