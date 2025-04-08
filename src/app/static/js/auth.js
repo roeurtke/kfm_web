@@ -1,21 +1,13 @@
-const apiBaseUrl = window.API_BASE_URL || 'http://127.0.0.1:8000';  // Set from Django template
+const apiBaseUrl = window.API_BASE_URL || 'http://127.0.0.1:8000';
 const maxTokenRefreshAttempts = 1;
 
-// Refresh the access token
+// Improved token refresh with cookie support
 window.RefreshToken = async function() {
     try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-            console.warn('No refresh token - redirecting to login');
-            clearAuthTokens();
-            redirectToLogin('no_refresh_token');
-            return null;
-        }
-
         const response = await fetch(`${apiBaseUrl}/api/token/refresh/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh: refreshToken })
+            credentials: 'include' // Important for cookie-based auth
         });
 
         if (!response.ok) {
@@ -24,13 +16,11 @@ window.RefreshToken = async function() {
         }
 
         const data = await response.json();
-        localStorage.setItem('accessToken', data.access);
-        
-        // Store new refresh token if provided (rotation)
-        if (data.refresh) {
-            localStorage.setItem('refreshToken', data.refresh);
+        if (!data.access) {
+            throw new Error('No access token in response');
         }
-        
+
+        localStorage.setItem('accessToken', data.access);
         return data.access;
 
     } catch (error) {
@@ -41,57 +31,66 @@ window.RefreshToken = async function() {
     }
 };
 
-// Helper functions
-function clearAuthTokens() {
+// Consolidated helper functions
+const clearAuthTokens = () => {
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-}
+    // Don't remove refresh token if it's HttpOnly cookie
+};
 
-function redirectToLogin(reason) {
-    const params = new URLSearchParams();
-    params.set('auth_error', reason);
-    window.location.href = `/login/?${params.toString()}`;
-}
+const redirectToLogin = (reason) => {
+    window.location.href = `/login/?auth_error=${encodeURIComponent(reason)}`;
+};
 
-// Fetch data from the API
-window.fetchData = async function(endpoint, retryCount = 0) {
-    let accessToken = localStorage.getItem('accessToken');
-    
+// Base request function to reduce code duplication
+async function makeRequest(method, endpoint, data = null, retryCount = 0) {
     try {
-        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-            method: 'GET',
+        const config = {
+            method,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            credentials: 'include'
+        };
 
+        if (data) config.body = JSON.stringify(data);
+
+        const response = await fetch(`${apiBaseUrl}${endpoint}`, config);
+
+        // Handle token refresh
         if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
             const newToken = await window.RefreshToken();
             if (newToken) {
-                localStorage.setItem('accessToken', newToken);
-                return window.fetchData(endpoint, retryCount + 1);
+                return makeRequest(method, endpoint, data, retryCount + 1);
             }
-            return null;
+            throw new Error('Token refresh failed');
         }
 
+        // Handle different response statuses
         if (!response.ok) {
-            throw new Error(`Request failed with status ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Request failed with status ${response.status}`);
         }
 
-        return await response.json();
+        return response.status === 204 ? null : await response.json();
 
     } catch (error) {
-        console.error('Fetch error:', error);
-        return null;
+        console.error(`${method} request error (${endpoint}):`, error);
+        throw error;
     }
-};
+}
 
-// Load data into a select element
+// CRUD operations using the base makeRequest function
+window.fetchData = (endpoint) => makeRequest('GET', endpoint);
+window.createData = (endpoint, data) => makeRequest('POST', endpoint, data);
+window.updateData = (endpoint, data) => makeRequest('PUT', endpoint, data);
+window.deleteData = (endpoint) => makeRequest('DELETE', endpoint);
+
+// Improved loadData function
 window.loadData = async function(endpoint, config = {}) {
     const {
-        targetElement = null,       // DOM select element to populate
-        populateCallback = null,     // Function to handle data rendering
+        targetElement = null,
+        populateCallback = null,
         defaultOptions = '<option value="" disabled selected>-- Select --</option>',
         alertOnError = true,
         required = true
@@ -110,113 +109,11 @@ window.loadData = async function(endpoint, config = {}) {
         console.error(`Error loading ${endpoint}:`, error);
         if (targetElement) {
             targetElement.innerHTML = defaultOptions;
+            targetElement.required = false;
         }
-        if (alertOnError) {
-            showAlert(`Failed to load ${endpoint.split('/')[1]}. Using default options.`, 'warning');
+        if (alertOnError && window.showAlert) {
+            window.showAlert(`Failed to load data. Please try again.`, 'error');
         }
-        throw error;
-    }
-};
-
-// Create data in the API
-window.createData = async function(endpoint, data, retryCount = 0) {
-    try {
-        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        // Token refresh handling
-        if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
-            const newToken = await window.RefreshToken();
-            if (newToken) {
-                localStorage.setItem('accessToken', newToken);
-                return window.createData(endpoint, data, retryCount + 1);
-            }
-            throw new Error('Token refresh failed');
-        }
-
-        // Special handling for validation errors
-        if (response.status === 400) {
-            const errorData = await response.json();
-            return { 
-                success: false, 
-                error: 'Validation failed', 
-                details: errorData, 
-                status: 400 
-            };
-        }
-
-        // General error handling
-        if (!response.ok) {
-            throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        return { 
-            success: true, 
-            data: await response.json() 
-        };
-
-    } catch (error) {
-        console.error(`createData error (${endpoint}):`, error);
-        return {
-            success: false,
-            error: error.message,
-            details: null
-        };
-    }
-};
-
-// Update data in the API
-window.updateData = async function(endpoint, data, retryCount = 0) {
-    try {
-        const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        if (response.status === 401 && retryCount < maxTokenRefreshAttempts) {
-            const newToken = await window.RefreshToken();
-            if (newToken) {
-                localStorage.setItem('accessToken', newToken);
-                return window.updateData(endpoint, data, retryCount + 1);
-            }
-            throw new Error('Token refresh failed');
-        }
-
-        if (response.status === 400) {
-            const errorData = await response.json();
-            return { 
-                success: false, 
-                error: 'Validation failed', 
-                details: errorData, 
-                status: 400 
-            };
-        }
-
-        if (!response.ok) {
-            throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        return { 
-            success: true, 
-            data: await response.json() 
-        };
-
-    } catch (error) {
-        console.error(`updateData error (${endpoint}):`, error);
-        return {
-            success: false,
-            error: error.message,
-            details: null
-        };
+        return null;
     }
 };

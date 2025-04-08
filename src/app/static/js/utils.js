@@ -1,4 +1,3 @@
-// Alert utilities
 window.showAlert = (message, type, duration = 5000) => {
     document.querySelector('.alert')?.remove();
     
@@ -12,7 +11,6 @@ window.showAlert = (message, type, duration = 5000) => {
     setTimeout(() => alertDiv.remove(), duration);
 };
 
-// Form utilities
 window.validateForm = (formData, requiredFields) => {
     const missingFields = requiredFields.filter(field => !formData[field]);
     if (missingFields.length) {
@@ -28,7 +26,6 @@ window.validateForm = (formData, requiredFields) => {
     return true;
 };
 
-// Select population utility
 window.populateSelect = function(data, selectElement, defaultText, selectedValue) {
     selectElement.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
     data.forEach(item => {
@@ -42,7 +39,6 @@ window.populateSelect = function(data, selectElement, defaultText, selectedValue
     });
 };
 
-// Error Handling Utilities
 window.handleApiError = function(result, defaultMessage = 'Operation failed') {
     let errorMessage = defaultMessage;
     
@@ -57,7 +53,7 @@ window.handleApiError = function(result, defaultMessage = 'Operation failed') {
     }
     
     window.showAlert(errorMessage, 'danger');
-    return errorMessage; // Optional: return for further processing
+    return errorMessage;
 };
 
 window.handleUnexpectedError = function(error, context = '', defaultMessage = 'An unexpected error occurred') {
@@ -73,33 +69,5 @@ window.handleUnexpectedError = function(error, context = '', defaultMessage = 'A
     }
     
     window.showAlert(message, 'danger');
-    return message; // Optional: return for logging
-};
-
-// Handle deletion of any data (generic)
-window.handleDeleteData = async function(id, row, endpoint, entityName = 'item') {
-    const name = row.cells[1]?.textContent || 'this item';
-
-    if (!confirm(`Are you sure you want to delete ${entityName} "${name}"? This action cannot be undone.`)) {
-        return;
-    }
-
-    const deleteBtn = row.querySelector('.btn-danger');
-
-    try {
-        const result = await window.deleteData(endpoint);
-        if (result.success) {
-            window.showAlert(`${entityName} "${name}" deleted successfully!`, 'success');
-            row.remove();
-            window.reinitializeDataTable();
-        } else {
-            window.showAlert(`Failed to delete ${entityName}: ${result.error}`, 'danger');
-        }
-    } catch (error) {
-        console.error('Delete error:', error);
-        window.showAlert(`An unexpected error occurred during ${entityName} deletion`, 'danger');
-    } finally {
-        deleteBtn.disabled = false;
-    }
-    deleteBtn.disabled = true;
+    return message;
 };
