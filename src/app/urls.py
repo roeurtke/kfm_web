@@ -21,4 +21,6 @@ urlpatterns = [
     path('users/<int:user_id>/edit/', views.edit_user, name='edit_user'),
     path('roles/', views.role, name='roles'),
     path('permissions/', views.permission, name='permissions'),
+    
+    path('404/', views.error_404, name='error_404'),
 ]

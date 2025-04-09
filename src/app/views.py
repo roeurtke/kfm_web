@@ -1,7 +1,10 @@
 from django.shortcuts import render
 from .utils import should_show_collapse
 
-# Views
+
+def error_404(request):
+    return render(request, '404.html')
+
 def index(request):
     return render(request, 'dashboard.html')
 
