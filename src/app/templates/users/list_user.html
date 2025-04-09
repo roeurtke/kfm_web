@@ -68,19 +68,19 @@
 
             // Action buttons
             const actionCell = document.createElement("td");
-            const viewLink = createActionLinkIcon(`/users/${user.id}/`, "View", "btn-primary","fa fa-sm fa-list-alt");
+            const viewLink = createActionLinkIcon(`/users/${user.id}/`, "btn-primary", "fa fa-sm fa-list-alt", "Show");
             viewLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/users/${user.id}/`;
             };
             actionCell.appendChild(viewLink);
-            const editLink = createActionLinkIcon(`/users/${user.id}/edit/`, "Edit", "btn-secondary","fa fa-xs fa-edit");
+            const editLink = createActionLinkIcon(`/users/${user.id}/edit/`, "btn-secondary", "fa fa-xs fa-edit", "Edit");
             editLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/users/${user.id}/edit/`;
             };
             actionCell.appendChild(editLink);
-            const deleteLink = createActionLinkIcon(`/users/${user.id}/delete/`, "Delete", "btn-danger", "fa fa-trash");
+            const deleteLink = createActionLinkIcon(`/users/${user.id}/delete/`, "btn-danger", "fa fa-trash", "Delete");
             deleteLink.onclick = (e) => {
                 e.preventDefault();
                 window.deleteData(user.id, row, `/api/users/${user.id}/`, 'User');

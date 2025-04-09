@@ -56,19 +56,19 @@
 
             // Action buttons
             const actionCell = document.createElement("td");
-            const viewLink = createActionLinkIcon(`/income-categories/${income_category.id}/`, "View", "btn-primary","fa fa-sm fa-list-alt");
+            const viewLink = createActionLinkIcon(`/income-categories/${income_category.id}/`, "btn-primary", "fa fa-sm fa-list-alt", "Show");
             viewLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/income-categories/${income_category.id}/`;
             };
             actionCell.appendChild(viewLink);
-            const editLink = createActionLinkIcon(`/income-categories/${income_category.id}/edit/`, "Edit", "btn-secondary","fa fa-xs fa-edit");
+            const editLink = createActionLinkIcon(`/income-categories/${income_category.id}/edit/`, "btn-secondary", "fa fa-xs fa-edit", "Edit");
             editLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/income-categories/${income_category.id}/edit/`;
             };
             actionCell.appendChild(editLink);
-            const deleteLink = createActionLinkIcon(`/income-categories/${income_category.id}/delete/`, "Delete", "btn-danger", "fa fa-trash");
+            const deleteLink = createActionLinkIcon(`/income-categories/${income_category.id}/delete/`, "btn-danger", "fa fa-trash", "Delete");
             deleteLink.onclick = (e) => {
                 e.preventDefault();
                 window.deleteData(income_category.id, row, `/api/income-categories/${income_category.id}/`, 'Income Category');

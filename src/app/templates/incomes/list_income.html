@@ -62,19 +62,19 @@
 
             // Action buttons
             const actionCell = document.createElement("td");
-            const viewLink = createActionLinkIcon(`/incomes/${income.id}/`, "View", "btn-primary","fa fa-sm fa-list-alt");
+            const viewLink = createActionLinkIcon(`/incomes/${income.id}/`, "btn-primary", "fa fa-sm fa-list-alt", "Show");
             viewLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/incomes/${income.id}/`;
             };
             actionCell.appendChild(viewLink);
-            const editLink = createActionLinkIcon(`/incomes/${income.id}/edit/`, "Edit", "btn-secondary","fa fa-xs fa-edit");
+            const editLink = createActionLinkIcon(`/incomes/${income.id}/edit/`, "btn-secondary", "fa fa-xs fa-edit", "Edit");
             editLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/incomes/${income.id}/edit/`;
             };
             actionCell.appendChild(editLink);
-            const deleteLink = createActionLinkIcon(`/incomes/${income.id}/delete/`, "Delete", "btn-danger", "fa fa-trash");
+            const deleteLink = createActionLinkIcon(`/incomes/${income.id}/delete/`, "btn-danger", "fa fa-trash", "Delete");
             deleteLink.onclick = (e) => {
                 e.preventDefault();
                 window.deleteData(income.id, row, `/api/incomes/${income.id}/`, 'Income');

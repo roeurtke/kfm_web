@@ -53,19 +53,19 @@
             row.appendChild(addCell(formatDate(role.updated_at)));
 
             const actionCell = document.createElement("td");
-            const viewLink = createActionLinkIcon(`/roles/${role.id}/`, "View", "btn-primary","fa fa-sm fa-list-alt");
+            const viewLink = createActionLinkIcon(`/roles/${role.id}/`, "btn-primary", "fa fa-sm fa-list-alt", "Show");
             viewLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/roles/${role.id}/`;
             };
             actionCell.appendChild(viewLink);
-            const editLink = createActionLinkIcon(`/roles/${role.id}/edit/`, "Edit", "btn-secondary","fa fa-xs fa-edit");
+            const editLink = createActionLinkIcon(`/roles/${role.id}/edit/`, "btn-secondary", "fa fa-xs fa-edit", "Edit");
             editLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/roles/${role.id}/edit/`;
             };
             actionCell.appendChild(editLink);
-            const deleteLink = createActionLinkIcon(`/roles/${role.id}/delete/`, "Delete", "btn-danger", "fa fa-trash");
+            const deleteLink = createActionLinkIcon(`/roles/${role.id}/delete/`, "btn-danger", "fa fa-trash", "Delete");
             deleteLink.onclick = (e) => {
                 e.preventDefault();
                 window.deleteData(role.id, row, `/api/roles/${role.id}/`, 'Role');

@@ -193,10 +193,11 @@
         //     return link;
         // }
 
-        function createActionLinkIcon(href, text, className, iconClass) {
+        function createActionLinkIcon(href, className, iconClass, title) {
             const link = document.createElement("a");
             link.href = href;
             link.className = `btn btn-sm ${className} mx-1`;
+            link.title = title;
 
             const icon = document.createElement("i");
             icon.className = iconClass;
