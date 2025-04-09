@@ -55,9 +55,24 @@
             row.appendChild(addCell(formatDate(permission.updated_at)));
 
             const actionCell = document.createElement("td");
-            actionCell.appendChild(createActionLink(`/permissions/${permission.id}/`, "View", "btn-info"));
-            actionCell.appendChild(createActionLink(`/permissions/${permission.id}/edit/`, "Edit", "btn-warning"));
-            actionCell.appendChild(createActionLink(`/permissions/${permission.id}/delete/`, "Delete", "btn-danger", true));
+            const viewLink = createActionLinkIcon(`/permissions/${permission.id}/`, "View", "btn-primary","fa fa-sm fa-list-alt");
+            viewLink.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = `/permissions/${permission.id}/`;
+            };
+            actionCell.appendChild(viewLink);
+            const editLink = createActionLinkIcon(`/permissions/${permission.id}/edit/`, "Edit", "btn-secondary","fa fa-xs fa-edit");
+            editLink.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = `/permissions/${permission.id}/edit/`;
+            };
+            actionCell.appendChild(editLink);
+            const deleteLink = createActionLinkIcon(`/permissions/${permission.id}/delete/`, "Delete", "btn-danger", "fa fa-trash");
+            deleteLink.onclick = (e) => {
+                e.preventDefault();
+                window.deleteData(permission.id, row, `/api/permissions/${permission.id}/`, 'Permission');
+            };
+            actionCell.appendChild(deleteLink);
             
             row.appendChild(actionCell);
             tableBody.appendChild(row);

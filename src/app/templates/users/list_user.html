@@ -68,13 +68,13 @@
 
             // Action buttons
             const actionCell = document.createElement("td");
-            const viewLink = createActionLinkIcon(`/users/${user.id}/`, "View", "btn-info","fa fa-xs fa-eye");
+            const viewLink = createActionLinkIcon(`/users/${user.id}/`, "View", "btn-primary","fa fa-sm fa-list-alt");
             viewLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/users/${user.id}/`;
             };
             actionCell.appendChild(viewLink);
-            const editLink = createActionLinkIcon(`/users/${user.id}/edit/`, "Edit", "btn-warning","fa fa-xs fa-edit");
+            const editLink = createActionLinkIcon(`/users/${user.id}/edit/`, "Edit", "btn-secondary","fa fa-xs fa-edit");
             editLink.onclick = (e) => {
                 e.preventDefault();
                 window.location.href = `/users/${user.id}/edit/`;
