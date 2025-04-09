@@ -177,20 +177,31 @@
     </script>
     
     <script>
-        function createActionLink(href, text, className, isDelete = false) {
+        // function createActionLink(href, text, className, isDelete = false) {
+        //     const link = document.createElement("a");
+        //     link.href = href;
+        //     link.textContent = text;
+        //     link.className = `btn btn-sm ${className} mx-1`;
+    
+        //     if (isDelete) {
+        //         link.onclick = (e) => {
+        //             if (!confirm("Are you sure you want to delete this user?")) {
+        //                 e.preventDefault();
+        //             }
+        //         };
+        //     }
+        //     return link;
+        // }
+
+        function createActionLinkIcon(href, text, className, iconClass) {
             const link = document.createElement("a");
             link.href = href;
-            link.textContent = text;
             link.className = `btn btn-sm ${className} mx-1`;
-    
-            if (isDelete) {
-                link.onclick = (e) => {
-                    if (!confirm("Are you sure you want to delete this user?")) {
-                        e.preventDefault();
-                    }
-                };
-            }
-            return link;
+
+            const icon = document.createElement("i");
+            icon.className = iconClass;
+            link.appendChild(icon);
+                return link;
         }
     
         function formatDate(dateString) {
