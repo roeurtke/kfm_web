@@ -74,6 +74,12 @@
                 window.location.href = `/users/${user.id}/`;
             };
             actionCell.appendChild(viewLink);
+            const lockLink = createActionLinkIcon(`/users/${user.id}/`, "btn-dark", "fa fa-key", "Change Password");
+            lockLink.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = `/users/${user.id}/`;
+            };
+            actionCell.appendChild(lockLink);
             const editLink = createActionLinkIcon(`/users/${user.id}/edit/`, "btn-secondary", "fa fa-xs fa-edit", "Edit");
             editLink.onclick = (e) => {
                 e.preventDefault();
