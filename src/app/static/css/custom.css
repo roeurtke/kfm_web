@@ -173,3 +173,17 @@ table.dataTable>thead .sorting_desc_disabled:after {
         margin-right: 5px;
     }
 }
+
+#dataTable,
+#dataTable th,
+#dataTable td {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* #dataTable th{
+    background-color: #03090f !important;
+    color: #f8f9fa !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+} */
