@@ -17,9 +17,9 @@
 
 /* Styling for buttons */
 .dataTables_wrapper .dt-buttons .btn-export {
-    padding: 4px 10px; /* Reduce padding */
-    font-size: 0.75rem; /* Decrease font size */
-    height: 32px; /* Set a fixed height */
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    height: 32px;
     line-height: 1;
     display: flex;
     align-items: center;
@@ -59,9 +59,9 @@ table.dataTable thead th {
     padding-right: 15px;
 }
 
-table.dataTable tbody th, table.dataTable tbody td {
+table.dataTable tbody th,
+table.dataTable tbody td {
     padding: 6px 12px;
-    /* text-transform: lowercase; */
 }
 
 /* Pagination buttons */
@@ -86,8 +86,7 @@ table.dataTable tbody th, table.dataTable tbody td {
     border-radius: 5px;
 }
 
-.dt-buttons .btn-sm span
-{
+.dt-buttons .btn-sm span {
     font-weight: bold;
     color: #475f7b;
     font-size: 0.8rem;
@@ -95,22 +94,15 @@ table.dataTable tbody th, table.dataTable tbody td {
     font-family: 'Rubik', 'Khmer OS Battambang';
 }
 
-.dt-buttons .btn-secondary
-{
+.dt-buttons .btn-secondary {
     background-color: white;
-    /* font-size: 0.8rem; */
     text-transform: uppercase;
     font-family: 'Rubik', 'Khmer OS Battambang';
     border: none !important;
 }
 
 /* Adjustments for small buttons */
-.btn.btn-sm.mx-1
-{
-    /* padding-left: 8px;
-    padding-right: 8px;
-    padding-top: 0px;
-    padding-bottom: 0px; */
+.btn.btn-sm.mx-1 {
     padding: 0.1rem 0.3rem;
 }
 
@@ -124,14 +116,22 @@ table.dataTable tbody th, table.dataTable tbody td {
 }
 
 /* Sorting arrows for DataTables */
-table.dataTable>thead .sorting:before, table.dataTable>thead .sorting_asc:before, table.dataTable>thead .sorting_desc:before, table.dataTable>thead .sorting_asc_disabled:before, table.dataTable>thead .sorting_desc_disabled:before {
+table.dataTable>thead .sorting:before,
+table.dataTable>thead .sorting_asc:before,
+table.dataTable>thead .sorting_desc:before,
+table.dataTable>thead .sorting_asc_disabled:before,
+table.dataTable>thead .sorting_desc_disabled:before {
     content: "▲";
     top: 10px;
     right: .5em;
     font-size: 10px;
 }
 
-table.dataTable>thead .sorting:after, table.dataTable>thead .sorting_asc:after, table.dataTable>thead .sorting_desc:after, table.dataTable>thead .sorting_asc_disabled:after, table.dataTable>thead .sorting_desc_disabled:after {
+table.dataTable>thead .sorting:after,
+table.dataTable>thead .sorting_asc:after,
+table.dataTable>thead .sorting_desc:after,
+table.dataTable>thead .sorting_asc_disabled:after,
+table.dataTable>thead .sorting_desc_disabled:after {
     content: "▼";
     top: 20px;
     right: .5em;
@@ -147,7 +147,29 @@ table.dataTable>thead .sorting:after, table.dataTable>thead .sorting_asc:after, 
     }
     
     .dataTables_wrapper .dt-buttons .btn-export {
-        flex: 1; /* Make buttons fit in a row */
-        min-width: 80px; /* Prevent too small buttons */
+        flex: 1;
+        min-width: 80px;
+    }
+
+    /* Make the table responsive */
+    .dataTables_wrapper table.dataTable {
+        width: 100%;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* Optional: Adjust cell padding */
+    table.dataTable tbody th,
+    table.dataTable tbody td {
+        padding: 4px 8px;
+    }
+
+    /* Optional: Adjust search bar and length menu */
+    .dataTables_wrapper .dataTables_filter input {
+        width: 150px;
+    }
+    .dataTables_wrapper .dataTables_length {
+        margin-right: 5px;
     }
 }
