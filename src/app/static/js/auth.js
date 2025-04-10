@@ -233,8 +233,11 @@ window.deleteData = async function(id, rowElement, endpoint, modelName) {
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Yes, delete it!',
         customClass: {
-            popup: 'animated bounceIn' // Add animation
-        }
+            popup: 'animated bounceIn', // Add animation
+            confirmButton: 'btn btn-sm btn-danger',
+            cancelButton: 'btn btn-sm btn-secondary ml-2'
+        },
+        // buttonsStyling: false
     });
 
     if (!isConfirmed) return;
