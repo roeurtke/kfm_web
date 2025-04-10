@@ -170,6 +170,7 @@ table.dataTable>thead .sorting_desc_disabled:after {
 #dataTable th,
 #dataTable td {
     border: none !important;
+    /* border-bottom: 1px solid #dfe3e7 !important; */
     box-shadow: none !important;
 }
 
