@@ -30,9 +30,9 @@ def expense(request):
     context = get_context(request, 'show_collapse_cash_flow')
     return render(request, 'expenses/list_expense.html', context)
 
-def income_cetegory(request):  # Fixed typo
+def income_cetegory(request):
     context = get_context(request, 'show_collapse_cash_flow')
-    return render(request, 'income_categories/list_income_category.html', context)
+    return render(request, 'income_cetegories/list_income_category.html', context)
 
 def expense_category(request):
     context = get_context(request, 'show_collapse_cash_flow')
