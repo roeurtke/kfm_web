@@ -1,4 +1,4 @@
-const apiBaseUrl = window.API_BASE_URL || 'https://192.168.18.149:8000/';  // Set from Django template
+const apiBaseUrl = window.API_BASE_URL || 'https://192.168.18.149:8000';  // Set from Django template
 const maxTokenRefreshAttempts = 1;
 
 // Refresh the access token
